@@ -16,20 +16,31 @@ inline void Vector3<FPType>::set(const FPType iv[3]) {
     y = iv[1];
     z = iv[2];
 }
+
 template<typename FPType>
 inline FPType Vector3<FPType>::length(void) const {
     return sqrt(x * x + y * y + z * z);
 }
-
 template<typename FPType>
-inline void Vector3<FPType>::normalize(void) {
+inline bool Vector3<FPType>::isZero(void) const {
+    return x == 0.0 && y == 0.0 && z == 0.0;
+}
+template<typename FPType>
+inline bool Vector3<FPType>::isZero(FPType eps) const {
+    return std::abs(x) < eps && std::abs(y) < eps && std::abs(z) < eps;
+}
+    
+template<typename FPType>
+inline bool Vector3<FPType>::normalize(void) {
     FPType l = x * x + y * y + z * z;
     if(l > VEC_EPS) {
         l = 1.0 / sqrt(l);
         x *= l;
         y *= l;
         z *= l;
+        return true;
     }
+    return false;
 }
 
 template<typename FPType>
@@ -37,6 +48,17 @@ inline Vector3<FPType> Vector3<FPType>::negate(void) {
     x = -x;
     y = -y;
     z = -z;
+}
+
+template<typename FPType>
+inline FPType Vector3<FPType>::getMaxComponent(VectorComponent* outcompid) const {
+    if(outcompid) {
+        *outcompid = (x > y)? kX : kY;
+        *outcompid = (v[*outcompid] > z)? *outcompid : kZ;
+        return v[*outcompid];
+    } else {
+        return std::max(x, std::max(y, z));
+    }
 }
 
 // 2 vector operations

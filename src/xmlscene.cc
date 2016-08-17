@@ -27,7 +27,8 @@ public:
 	
 private:
 	XMLSceneLoader *loader;
-	
+    std::map<std::string, int> normalMapSpaceTable;
+    
 private:
 	bool parseRenderConfig(tinyxml2::XMLElement *elm);
 	bool parseAssetLibrary(tinyxml2::XMLElement *elm);
@@ -51,15 +52,23 @@ private:
 	bool checkStringAttribute(tinyxml2::XMLElement *elm, const char *key, std::string *val);
 	bool checkVector3Attribute(tinyxml2::XMLElement *elm, const char *key, Vector3 *val);
 	bool checkColorAttribute(tinyxml2::XMLElement *elm, const char *key, Color *val);
-	
+    
+    int checkNormalMapSpace(const std::string& type);
+    
 	//
-	MaterialRef parseSingleBSDFMaterial(tinyxml2::XMLElement *elm);
+    MaterialRef parseSingleBSDFMaterial(tinyxml2::XMLElement *elm);
+    MaterialRef parseFineGlassMaterial(tinyxml2::XMLElement *elm);
+    
 };
 
 /////
 // implementation
 
-XMLSceneLoader::XMLParser::XMLParser() {}
+XMLSceneLoader::XMLParser::XMLParser() {
+    normalMapSpaceTable["worlld"] = Texture::kWorldSpace;
+    normalMapSpaceTable["object"] = Texture::kObjectSpace;
+    normalMapSpaceTable["tangent"] = Texture::kTangentSpace;
+}
 XMLSceneLoader::XMLParser::~XMLParser() {}
 
 bool XMLSceneLoader::XMLParser::load(std::string& filename, XMLSceneLoader *xmlloader) {
@@ -512,28 +521,20 @@ BSDFRef XMLSceneLoader::XMLParser::parseBSDFElement(tinyxml2::XMLElement *elm) {
 	bool res = checkStringAttribute(elm, "type", &type);
 	assert(res);
 	
-	if(type.compare("diffuse") == 0) {
-		ret = BSDFRef(new DiffuseBSDF());
+	if(type.compare("lambert") == 0) {
+		ret = BSDFRef(new LambertBSDF());
 		
-	} else if(type.compare("refraction") == 0) {
-		RefractionBSDF *tmpbsdf = new RefractionBSDF();
+	} else if(type.compare("fullrefraction") == 0) {
+		FullRefractionBSDF *tmpbsdf = new FullRefractionBSDF();
 		R1hFPType ior;
 		if(checkFloatAttribute(elm, "ior", &ior)) {
 			tmpbsdf->setIor(ior);
 		}
 		ret = BSDFRef(tmpbsdf);
 		
-	} else if(type.compare("specular") == 0) {
-		ret = BSDFRef(new SpecularBSDF());
+	} else if(type.compare("fullreflection") == 0) {
+		ret = BSDFRef(new FullReflectionBSDF());
 		
-	} else if(type.compare("paint") == 0) {
-		PaintBSDF *tmpbsdf = new PaintBSDF();
-		R1hFPType ior;
-		if(checkFloatAttribute(elm, "ior", &ior)) {
-			tmpbsdf->setIor(ior);
-		}
-		ret = BSDFRef(tmpbsdf);
-
 	} else if(type.compare("translucent") == 0) {
 		ret = BSDFRef(new TranslucentBSDF());
 
@@ -702,6 +703,14 @@ bool XMLSceneLoader::XMLParser::checkColorAttribute(tinyxml2::XMLElement *elm, c
 	return true;
 }
 
+int XMLSceneLoader::XMLParser::checkNormalMapSpace(const std::string& type) {
+    std::map<std::string, int>::iterator ite = normalMapSpaceTable.find(type);
+    if(ite != normalMapSpaceTable.end()) {
+        return normalMapSpaceTable[type];
+    }
+    return -1;
+}
+
 /////
 MaterialRef XMLSceneLoader::XMLParser::parseSingleBSDFMaterial(tinyxml2::XMLElement *elm) {
 	std::cout << "parseSingleBSDFMaterial" << std::endl;
@@ -719,32 +728,91 @@ MaterialRef XMLSceneLoader::XMLParser::parseSingleBSDFMaterial(tinyxml2::XMLElem
 		} else if(strcmp(elmname, "reflectance") == 0) {
 			Color tmpcol;
 			if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
-				mat->setReflectanceColor(tmpcol);
+                mat->setColorTexture(SingleBSDFMaterial::kReflectance, tmpcol);
 			} else {
 				// texture
 				tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
 				TextureRef tex = parseTextureElement(texelm);
 				assert(tex.get());
-				mat->setReflectanceTexture(tex);
+				mat->setTexture(SingleBSDFMaterial::kReflectance, tex);
 			}
 			
 		} else if(strcmp(elmname, "emittance") == 0) {
 			Color tmpcol;
 			if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
-				mat->setEmittanceColor(tmpcol);
+                mat->setColorTexture(SingleBSDFMaterial::kEmittance, tmpcol);
 			} else {
 				// texture
 				tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
 				TextureRef tex = parseTextureElement(texelm);
 				assert(tex.get());
-				mat->setEmittanceTexture(tex);
+				mat->setTexture(SingleBSDFMaterial::kEmittance, tex);
 			}
-		}
+        } else if(strcmp(elmname, "normal") == 0) {
+            // texture only
+            // map type
+            std::string mapspacestr;
+            if(checkStringAttribute(tmpelm, "mapspace", &mapspacestr)) {
+                int mapspace = checkNormalMapSpace(mapspacestr);
+                if(mapspace < 0) {
+                    std::cerr << "normal map texture mapspace attribute is not defined. use tangent space." << std::endl;
+                    mapspace = Texture::kTangentSpace;
+                }
+                
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                tex->addMapType(mapspace);
+                mat->setTexture(SingleBSDFMaterial::kNormalMap, tex);
+            } else {
+                std::cerr << "normal map texture map type is not defined." << std::endl;
+            }
+            
+        }
 		
 		tmpelm = tmpelm->NextSiblingElement();
 	}
 	return MaterialRef(mat);
 }
+
+MaterialRef XMLSceneLoader::XMLParser::parseFineGlassMaterial(tinyxml2::XMLElement *elm) {
+    std::cout << "parseFineGlassMaterial" << std::endl;
+    FineGlassMaterial *mat = new FineGlassMaterial();
+    
+    tinyxml2::XMLElement *tmpelm = elm->FirstChildElement();
+    while(tmpelm) {
+        const char *elmname = tmpelm->Name();
+        
+        if(strcmp(elmname, "reflectance") == 0) {
+            Color tmpcol;
+            if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
+                mat->setColorTexture(FineGlassMaterial::kReflectance, tmpcol);
+            } else {
+                // texture
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                mat->setTexture(FineGlassMaterial::kReflectance, tex);
+            }
+            
+        } else if(strcmp(elmname, "emittance") == 0) {
+            Color tmpcol;
+            if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
+                mat->setColorTexture(FineGlassMaterial::kEmittance, tmpcol);
+            } else {
+                // texture
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                mat->setTexture(FineGlassMaterial::kEmittance, tex);
+            }
+        }
+        
+        tmpelm = tmpelm->NextSiblingElement();
+    }
+    return MaterialRef(mat);
+}
+
 
 //////////
 XMLSceneLoader::XMLSceneLoader():

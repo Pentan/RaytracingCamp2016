@@ -28,10 +28,12 @@ struct Ray {
 		weight(col)
     {};
 	
+    /*
     void smallOffset(const Vector3 &n) {
         origin += n * ((Vector3::dot(direction, n) > 0.0)? kEPS : -kEPS);
     }
-	
+	*/
+    
 	Ray makeTransformed(Matrix4 m) const {
 		Ray ret = *this;
 		ret.origin = Matrix4::transformV3(m, origin);

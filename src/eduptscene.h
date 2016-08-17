@@ -1,12 +1,8 @@
 ﻿#ifndef R1H_EDUPTSCENE_H
 #define R1H_EDUPTSCENE_H
 
-#include "material.h"
-#include "bsdf.h"
-#include "bsdfdiffuse.h"
-#include "bsdfspecular.h"
-#include "bsdfrefraction.h"
-#include "bsdfpaint.h"
+#include "materials/material_include.h"
+#include "bsdfs/bsdf_include.h"
 #include "scene.h"
 
 namespace r1h {

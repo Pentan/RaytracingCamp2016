@@ -12,7 +12,7 @@ else
 endif
 
 EXT_DIR = ext
-INCLUDES = -I$(EXT_DIR)
+INCLUDES = -I$(EXT_DIR) -I.
 
 CFLAGS = -Wall $(EXTRAFLAGS) $(INCLUDES)
 CXXFLAGS = -std=c++11 -stdlib=libc++ -Wall $(EXTRAFLAGS) $(INCLUDES)
@@ -21,34 +21,34 @@ LDFLAGS = -lc++ $(EXTRAFLAGS)
 OBJS = \
     main.o \
     aabb.o \
-    aabbgeometry.o \
     abstracttonemapper.o \
-    bsdfdiffuse.o \
-    bsdfrefraction.o \
-    bsdfspecular.o \
-    bsdfpaint.o \
-    bsdftranslucent.o \
     bvhnode.o \
     camera.o \
     commandqueue.o \
     eduptscene.o \
     framebuffer.o \
     intersection.o \
-    materialsinglebsdf.o \
-    materialsky.o \
-    mesh.o \
     renderer.o \
     scene.o \
     scenesupport.o \
     sceneobject.o \
-    sphere.o \
-    texturebase.o \
-    textureimage.o \
-    texturenoise.o \
     tonemapper.o \
     wavefrontobj.o \
     xmlscene.o \
-    xmlobjloader.o
+    xmlobjloader.o \
+    bsdfs/lambert.o \
+    bsdfs/fullrefraction.o \
+    bsdfs/fullreflection.o \
+    bsdfs/paint.o \
+    bsdfs/translucent.o \
+    materials/singlebsdfmaterial.o \
+    materials/simplesky.o \
+    geometries/aabbgeometry.o \
+    geometries/sphere.o \
+    geometries/mesh.o \
+    texture/texture.o \
+    texture/imagetexture.o \
+    texture/noisetexture.o
 
 EXT_OBJS = \
     $(EXT_DIR)/tinyxml/tinyxml2.o

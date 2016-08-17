@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cmath>
+#include <algorithm>
 #include "constants.h"
 
 namespace vqm {
@@ -23,9 +24,13 @@ template<typename FPType> union Vector3 {
     inline void set(const FPType iv[3]);
     
     inline FPType length(void) const;
+    inline bool isZero(void) const;         // x,y,z == 0.0
+    inline bool isZero(FPType eps) const;   // |x,y,z| < eps
     
-    inline void normalize(void);
+    inline bool normalize(void);
     inline Vector3 negate(void);
+    
+    inline FPType getMaxComponent(VectorComponent* outcompid=0) const;
     
     // 2 vector operations
     static inline FPType distance(const Vector3 v0, const Vector3 v1);
@@ -33,8 +38,8 @@ template<typename FPType> union Vector3 {
     static inline Vector3 normalized(const Vector3 v);
     static inline Vector3 negated(const Vector3 v);
     
-    static inline Vector3 mul(const Vector3 v0, const Vector3 v1);
-    static inline Vector3 div(const Vector3 v0, const Vector3 v1);
+    static inline Vector3 mul(const Vector3 v0, const Vector3 v1); // multiple each component
+    static inline Vector3 div(const Vector3 v0, const Vector3 v1); // divide each component
     
     static inline FPType dot(const Vector3 v0, const Vector3 v1);
     static inline Vector3 cross(const Vector3 v0, const Vector3 v1);

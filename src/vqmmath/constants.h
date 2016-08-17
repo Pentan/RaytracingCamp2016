@@ -3,6 +3,12 @@
 
 namespace vqm {
 const double VEC_EPS = 1e-16;
+enum VectorComponent {
+    kX,
+    kY,
+    kZ,
+    kW
+};
 }
 
 #endif

@@ -44,33 +44,13 @@ int main(int argc, char *argv[]) {
     // renderer setup
     Renderer *render = new Renderer();
 
-	/*
-	Renderer::Config renderConf = render->getConfig();
-	
-    //renderConf.width = 1280 / 4;
-    //renderConf.height = 720 / 4;
-	renderConf.width = 640 / 4;
-	renderConf.height = 480 / 4;
-	renderConf.samples = 16;
-	renderConf.subSamples = 2;
-	renderConf.tileSize = 64;
-	renderConf.minDepth = 2;
-    renderConf.maxDepth = 4;
-	
-	// parse render config from arguments?
-	
-    render->setConfig(renderConf);
-	
-    printf("renderer configured [%.4f sec]\n", gettimeofday_sec() - startTime);
-	 */
-
     // scene setup
     Scene *scene = new Scene();
 	bool loaded = false;
 	
-#if 1
-	{
+	if(argc > 1){
 		XMLSceneLoader loader;
+#if 0
 		//std::string xmlfile("scenes/edupt_cornelbox.xml");
 		//std::string xmlfile("scenes/mesh_cube.xml");
 		//std::string xmlfile("scenes/textest.xml");
@@ -78,24 +58,21 @@ int main(int argc, char *argv[]) {
 		//std::string xmlfile("scenes/mesh_ref.xml");
 		//std::string xmlfile("scenes/mesh_cat.xml");
 		std::string xmlfile("scenes/scene.xml");
-
-		loader.load(xmlfile, scene, render);
-		loaded = true;
-		//return 0;
-	}
 #else
-	if(argc > 1) {
-		loaded = loader.load(argv[1], scene, render);
-		
-	} else {
-		printf("usage:%s [file.obj]\n", argv[0]);
-		printf("no obj set. setup default scene.\n");
-		loaded = true;
-		
-		EduptScene::load(scene, (double)renderConf.width / renderConf.height);
-		//EduptScene::load2(scene, (double)renderConf.width / renderConf.height);
-	}
+        std::string xmlfile(argv[1]);
 #endif
+		loaded = loader.load(xmlfile, scene, render);
+		//loaded = true;
+		//return 0;
+    } else {
+        Renderer::Config conf = render->getConfig();
+        conf.width = 256;
+        conf.height = 256;
+        conf.samples = 64;
+        render->setConfig(conf);
+        loaded = EduptScene::load(scene, double(conf.width) / conf.height);
+        //loaded = true;
+    }
 
     printf("scene loaded [%.4f sec]\n", gettimeofday_sec() - startTime);
 
@@ -103,6 +80,7 @@ int main(int argc, char *argv[]) {
 
 		// set tone mapper
 		ToneMapper *mapper = new ToneMapper();
+        //mapper->setGamma(1.0); //+++++
 		
 		// render
 		double renderStart = gettimeofday_sec();

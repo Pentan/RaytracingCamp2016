@@ -26,7 +26,9 @@ template<typename FPType> union Vector4 {
     inline void set(const Vector3<FPType> vxyz, const FPType iw);
     
     inline Vector3<FPType> getXYZ(void) const;
+    
     inline FPType length(void) const;
+    inline bool isZero(void) const;
     
     inline void normalize(void);
     inline void negate(void);

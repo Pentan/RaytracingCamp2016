@@ -64,9 +64,14 @@ bool SceneObject::isIntersect(const Ray &ray, Intersection *intersect) {
 	Ray tray = ray.makeTransformed(iTransform);
 	if(geometry->isIntersect(tray, intersect)) {
 		// fix transform
+        // position
 		intersect->position = Matrix4::transformV3(transform, intersect->position);
-		intersect->normal = Matrix4::mulV3(itTransform, intersect->normal);
-		intersect->normal.normalize();
+		// normal
+        intersect->hitNormal = Matrix4::mulV3(itTransform, intersect->hitNormal);
+		intersect->hitNormal.normalize();
+        intersect->geometryNormal = Matrix4::mulV3(itTransform, intersect->geometryNormal);
+        intersect->geometryNormal.normalize();
+        // calc distance
 		intersect->distance = Vector3::distance(ray.origin, intersect->position);
 		return true;
 	}

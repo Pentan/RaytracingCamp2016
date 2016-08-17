@@ -10,6 +10,7 @@
 #include "random.h"
 #include "framebuffer.h"
 #include "ray.h"
+#include "intersection.h"
 
 namespace r1h {
 
@@ -48,24 +49,47 @@ public:
         kDone
     };
     
-	struct Context {
-		Random random;
-		std::vector<Ray> rayVector1;
-		std::vector<Ray> rayVector2;
+	class Context {
+    public:
+        Random random;
+        
 		std::vector<Ray> workVector;
 		
 		const Config *config;
 		int state;
         double tileProgress;
         
-		Context() : random(0), state(kAwake) {}
-		void init(const unsigned int seed, const Config *conf) {
-			random.setSeed(seed);
-			rayVector1.reserve(128);
-			rayVector2.reserve(128);
-			workVector.reserve(32);
-			config = conf;
-		}
+        Context();
+        ~Context();
+        void init(const unsigned int seed, const Config *conf);
+        
+        void startWithRay(const Ray& ray);
+        
+        size_t numInsidentRays();
+        void startRayIteration();
+        bool isEndRayIteration();
+        const Ray& nextInsidentRay();
+        void swapRayBuffers();
+        
+        const Ray& getCurrentInsidentRay() const;
+        int currentTraceDepth() const;
+        
+        void setRussianRouletteProbability(R1hFPType p);
+        //void calcIncidentWeight(const FinalIntersection &isect);
+        
+        Ray& emitRay(const Vector3 &orig, const Vector3 &dir, const Color &weight);
+        Ray& emitRay(const Ray &newray, const Color &reflectance);
+        
+    private:
+        std::vector<Ray> rayVector1;
+        std::vector<Ray> rayVector2;
+        std::vector<Ray>* insidentRays;
+        std::vector<Ray>* emittedRays;
+        size_t iterationCount;
+        
+        Ray *curInsidentRay;
+        int traceDepth;
+        R1hFPType russianRoulette;
 	};
 	
 public:
@@ -92,12 +116,15 @@ private:
     Config config;
     
 	std::vector<Context> *renderContexts;
-	
+    
+    // worker
 	int pushedCommandCount;
     RenderCommandQueue *renderQueue;
     std::vector<std::thread> workers;
 	void renderTile(Context *cntx, Scene *scene, FrameBuffer::Tile tile);
 	
+    Color computeRadiance(Context *cntx, Scene *scene, const Ray &ray);
+    
 	static void startWorker(Renderer *rndr, int workerId, Scene *scene);
 };
 

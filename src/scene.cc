@@ -7,8 +7,8 @@
 #include "camera.h"
 #include "geometry.h"
 #include "mesh.h"
-#include "bsdfdiffuse.h"
-#include "material.h"
+#include "bsdfs/bsdf_include.h"
+#include "materials/material_include.h"
 #include "bvhnode.h"
 #include "sceneobject.h"
 #include "intersection.h"
@@ -37,44 +37,12 @@ Scene::~Scene() {
     }
 }
 
-/*
-bool Scene::load() {
-	// FIXME
-	printf("FIXME : Scene::load\n");
-	return true;
-}
-*/
-
-bool Scene::loadWavefrontObj(std::string filename) {
-	SimpleObjLoader loader(filename.c_str(), this);
-	loader.load();
-	
-	/*
-	//+++++
-	for(size_t i = 0; i < sceneObjects.size(); i++) {
-		SceneObject *obj = sceneObjects[i].get();
-		Mesh *mesh = dynamic_cast<Mesh*>(obj->getGeometry());
-		printf("mesh[%ld] %p\n", i, mesh);
-	}
-	//+++++
-	*/
-	return true;
-}
-
-
-bool loadXML(std::string filename, Renderer *render) {
-    //XMLSceneLoader loader();
-    //return loader.load(filename, this, render);
-	printf("loadXML is under construction\n");
-	return false;
-}
-
 int Scene::addObject(SceneObjectRef objref) {
 	sceneObjects.push_back(objref);
     return (int)sceneObjects.size() - 1;
 };
 
-SceneObject* Scene::getObject(int objid) {
+SceneObject* Scene::getObject(int objid) const {
 	if(objid < 0 || objid >= sceneObjects.size()) {
 		return nullptr;
 	}
@@ -94,7 +62,7 @@ void Scene::setCamera(CameraRef camref) {
 	camera = camref;
 }
 
-SkyMaterial* Scene::getSkyMaterial() {
+SkyMaterial* Scene::getSkyMaterial() const {
 	return skyMaterial.get();
 }
 
@@ -125,35 +93,32 @@ void Scene::prepareRendering() {
 	//printf("%ld objects. BVH max depth: %d\n", sceneObjects.size(), maxdepth);
 }
 
+/*
 Color Scene::radiance(Renderer::Context *cntx, const Ray &ray) {
-	Random *crnd = &cntx->random;
+	//Random *crnd = &cntx->random;
 	
-    std::vector<Ray> *currays = &cntx->rayVector1;
-	std::vector<Ray> *nextrays = &cntx->rayVector2;
+    //std::vector<Ray> *currays = &cntx->rayVector1;
+	//std::vector<Ray> *nextrays = &cntx->rayVector2;
 	std::vector<Ray> *tmprays = &cntx->workVector;
     
-	currays->clear();
-	nextrays->clear();
 	tmprays->clear();
 	
 	// init radiance
 	Color radiancecol(0.0);
 	// first ray
-	currays->push_back(ray);
-	
+    cntx->emitRay(ray);
+    
 	// trace!
 	int depth = 0;
-	while(currays->size() > 0) {
-		// clear next ray container
-		nextrays->clear();
+	while(cntx->numRaysToTrace() > 0) {
 		
 		// trace
         double minDepth = cntx->config->minDepth;
         double depthLimit = cntx->config->maxDepth;
         
-		int raynum = (int)currays->size();
+		int raynum = (int)cntx->numRaysToTrace();
 		for(int i = 0; i < raynum; i++) {
-			const Ray &traceray = currays->at(i);
+			const Ray &traceray = cntx->rayToTrace(i);
 			Intersection intersect;
 			
 			// not intersected. pick background
@@ -171,7 +136,7 @@ Color Scene::radiance(Renderer::Context *cntx, const Ray &ray) {
 			
 			// from hit face info
 			const Material *hitmat = hitobject->getMaterialById(intersect.materialId);
-			const Color reflectance = hitmat->getReflectance(hitobject, intersect);
+			//const Color reflectance = hitmat->getReflectance(hitobject, intersect);
             const Color emittance = hitmat->getEmittance(hitobject, intersect);
             
 #if 1
@@ -187,13 +152,14 @@ Color Scene::radiance(Renderer::Context *cntx, const Ray &ray) {
 			//continue;
             //+++++
 #endif
-            double russianprob = std::max(reflectance.r, std::max(reflectance.g, reflectance.b));
+            R1hFPType russianprob = hitmat->getTerminationProbability(hitobject, intersect);
+            //std::max(reflectance.r, std::max(reflectance.g, reflectance.b));
             if(depth > depthLimit) {
                 russianprob *= pow(0.5, depth - depthLimit);
             }
             if(depth < minDepth) {
                 russianprob = 1.0;
-            } else if(crnd->next01() >= russianprob) {
+            } else if(cntx->random.next01() >= russianprob) {
                 // russian roulette kill
                 continue;
             }
@@ -201,7 +167,8 @@ Color Scene::radiance(Renderer::Context *cntx, const Ray &ray) {
             //const Color nextweight = reflectance * russianprob;
             
             tmprays->clear();
-            hitmat->makeNextRays(traceray, hitobject, intersect, depth, crnd, tmprays);
+            hitmat->makeNextRays(traceray, hitobject, intersect, depth, cntx);
+            
             for(int j = 0; j < (int)tmprays->size(); j++) {
                 Ray &nwray = tmprays->at(j);
                 nwray.smallOffset(intersect.normal);
@@ -216,6 +183,28 @@ Color Scene::radiance(Renderer::Context *cntx, const Ray &ray) {
 	
 	return radiancecol;
     //return Color(fabs(ray.direction.x), fabs(ray.direction.y), fabs(ray.direction.z));
+}
+*/
+
+bool Scene::isIntersect(const Ray &ray, Intersection *intersect) const {
+    intersect->clear();
+    
+#if 0
+    // brute force
+    for(int i = 0; i < (int)sceneObjects.size(); ++i) {
+        Intersection tmpinter;
+        if(sceneObjects[i]->isIntersect(ray, &tmpinter)) {
+            if(tmpinter.distance < intersect->distance) {
+                *intersect = tmpinter;
+                intersect->objectId = i;
+            }
+        }
+    }
+    return intersect->objectId != Intersection::kNoIntersected;
+#else
+    // BVH
+    return BVHNode::isIntersectBVHTree(this, *objectBVH, ray, intersect);
+#endif
 }
 
 bool Scene::isIntersectLeaf(int dataid, const Ray &ray, Intersection *intersect) const {
@@ -240,6 +229,7 @@ bool Scene::isIntersectLeaf(int dataid, const Ray &ray, Intersection *intersect)
 	return false;
 }
 
+/*
 bool Scene::intersectSceneObjects(const Ray &ray, Intersection *intersect) {
 	
     intersect->clear();
@@ -262,3 +252,4 @@ bool Scene::intersectSceneObjects(const Ray &ray, Intersection *intersect) {
 #endif
 	
 }
+ */

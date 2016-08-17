@@ -1,12 +1,14 @@
-﻿#ifndef R1H_INTERSECTION_H
+#ifndef R1H_INTERSECTION_H
 #define R1H_INTERSECTION_H
 
 #include <vector>
 #include "r1htypes.h"
 #include "ray.h"
-//#include "material.h"
 
 namespace r1h {
+
+class Material;
+class SceneObject;
 
 class Intersection {
 public:
@@ -15,32 +17,41 @@ public:
     };
     
     R1hFPType distance;
-	Vector3 varyingWeight;
-    int faceId;
-	
-    Vector3 normal;
     Vector3 position;
+    
+    Vector3 hitNormal;
+    Vector3 geometryNormal;
+    
+    Vector3 tangent;
+    
+    Vector3 varyingWeight;
+    int faceId;
     
     int materialId;
     int objectId;
 	
-	/*
-	 struct {
-	 Vector3 position;
-	 Vector3 normal;
-	 Vector3 tangent;
-	 } world, local;
-	 */
-	
-    //std::vector<Vector3> attributes;
-    
-    //Material *material;
-    
     Intersection();
+    ~Intersection();
+    
     void clear();
-	Vector3 orientingNormal(const Ray &ray) const;
 };
 
+// extended subclass
+class FinalIntersection : public Intersection {
+public:
+    const Material *material;
+    const SceneObject *objectRef;
+    
+    Vector3 shadingNormal;
+    Matrix4 tangentSpaceBasis;
+    Matrix4 inverseTangentSpaceBasis;
+    
+    FinalIntersection(const Intersection& isect);
+    ~FinalIntersection();
+    
+    void computeTangentSpaceWithShadingNormal(const Vector3& shdnorm);
+};
+    
 }
 
 #endif

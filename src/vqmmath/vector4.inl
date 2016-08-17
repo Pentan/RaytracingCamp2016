@@ -30,9 +30,14 @@ template<typename FPType>
 inline Vector3<FPType> Vector4<FPType>::getXYZ(void) const {
     return Vector3<FPType>(x, y, z);
 }
+
 template<typename FPType>
 inline FPType Vector4<FPType>::length(void) const {
     return sqrt(x * x + y * y + z * z + w * w);
+}    
+template<typename FPType>
+inline bool Vector4<FPType>::isZero(void) const {
+    return x == 0.0 && y == 0.0 && z == 0.0 && w == 0.0;
 }
 
 template<typename FPType>

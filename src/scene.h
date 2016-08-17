@@ -6,8 +6,7 @@
 #include "ray.h"
 #include "renderer.h"
 #include "sceneobject.h"
-#include "material.h"
-#include "materialsky.h"
+#include "materials/material_include.h"
 #include "camera.h"
 #include "intersection.h"
 #include "bvhnode.h"
@@ -22,27 +21,24 @@ public:
     ~Scene();
     
     // setup
-    //bool load();
-	bool loadWavefrontObj(std::string filename);
-	
-    bool loadXML(std::string filename, Renderer* render);
-    
     int addObject(SceneObjectRef objref);
-    SceneObject* getObject(int objid);
+    SceneObject* getObject(int objid) const;
 	int getObjectsCount() const;
 	
     Camera* getCamera();
 	void setCamera(CameraRef camref);
     
-	SkyMaterial* getSkyMaterial();
+	SkyMaterial* getSkyMaterial() const;
 	void setSkyMaterial(SkyMaterialRef matref);
-	
+    
 	void prepareRendering();
 	
-	// render
-    Color radiance(Renderer::Context *cntx, const Ray &ray);
+    bool isIntersect(const Ray &ray, Intersection *intersect) const;
     
-	// override
+	// render
+    //Color radiance(Renderer::Context *cntx, const Ray &ray);
+    
+	// override BVHLeaf
 	bool isIntersectLeaf(int dataid, const Ray &ray, Intersection *intersect) const;
 	
 private:
@@ -50,9 +46,10 @@ private:
     std::vector<SceneObjectRef> sceneObjects;
     BVHNode *objectBVH;
     
-    SkyMaterialRef  skyMaterial;
+    SkyMaterialRef skyMaterial;
 	
-	bool intersectSceneObjects(const Ray &ray, Intersection *intersect);
+    // -> isIntersect
+	//bool intersectSceneObjects(const Ray &ray, Intersection *intersect);
 };
 
 }

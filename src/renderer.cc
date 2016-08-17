@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <chrono>
 #include <random>
 
@@ -10,6 +10,87 @@
 #include "camera.h"
 
 using namespace r1h;
+
+/////
+
+Renderer::Context::Context():
+random(0),
+state(kAwake)
+{}
+
+Renderer::Context::~Context() {}
+
+void Renderer::Context::init(const unsigned int seed, const Config *conf) {
+    random.setSeed(seed);
+    rayVector1.reserve(128);
+    rayVector2.reserve(128);
+    workVector.reserve(32);
+    config = conf;
+    
+    curInsidentRay = nullptr;
+    
+    insidentRays = &rayVector1;
+    emittedRays = &rayVector2;
+}
+
+void Renderer::Context::startWithRay(const Ray& ray) {
+    insidentRays->push_back(ray);
+    traceDepth = 0;
+}
+
+size_t Renderer::Context::numInsidentRays() {
+    return insidentRays->size();
+}
+void Renderer::Context::startRayIteration() {
+    iterationCount = 0;
+}
+bool Renderer::Context::isEndRayIteration() {
+    return iterationCount >= insidentRays->size();
+}
+const Ray& Renderer::Context::nextInsidentRay() {
+    Ray& ray = insidentRays->at(iterationCount);
+    iterationCount += 1;
+    curInsidentRay = &ray;
+    return ray;
+}
+
+const Ray& Renderer::Context::getCurrentInsidentRay() const {
+    return *curInsidentRay;
+}
+
+int Renderer::Context::currentTraceDepth() const {
+    return traceDepth;
+}
+
+void Renderer::Context::setRussianRouletteProbability(R1hFPType p) {
+    russianRoulette = p;
+}
+/*
+void Renderer::Context::calcIncidentWeight(const FinalIntersection &isect) {
+    hitNormal = isect.shadingNormal;
+}
+*/
+Ray& Renderer::Context::emitRay(const Vector3 &orig, const Vector3 &dir, const Vector3 &weight) {
+    Ray ray(orig, dir, weight);
+    return emitRay(ray, Color(1.0));
+}
+Ray& Renderer::Context::emitRay(const Ray &newray, const Color &reflectance) {
+    emittedRays->push_back(newray);
+    Ray& retray = emittedRays->back();
+    retray.weight = Vector3::mul(retray.weight, reflectance);
+    retray.weight = Vector3::mul(retray.weight, curInsidentRay->weight);
+    retray.weight = retray.weight / russianRoulette;
+    
+    return retray;
+}
+
+void Renderer::Context::swapRayBuffers() {
+    std::swap(insidentRays, emittedRays);
+    emittedRays->clear();
+    traceDepth += 1;
+}
+
+/////
 
 Renderer::Renderer():
     frameBuffer(0),
@@ -174,7 +255,7 @@ void Renderer::renderTile(Context *cntx, Scene *scene, FrameBuffer::Tile tile) {
                     R1hFPType cy = py * divh * 2.0 - 1.0;
 					
 					Ray ray = camera->getRay(cx, cy, &cntx->random);
-					Color c = scene->radiance(cntx, ray);
+					Color c = computeRadiance(cntx, scene, ray);
 					frameBuffer->accumulate(ix, iy, c);
                 }
             }
@@ -184,8 +265,102 @@ void Renderer::renderTile(Context *cntx, Scene *scene, FrameBuffer::Tile tile) {
     }
 }
 
+Color Renderer::computeRadiance(Context *cntx, Scene *scene, const Ray &ray) {
+    //Random *crnd = &cntx->random;
+    
+    //std::vector<Ray> *currays = &cntx->rayVector1;
+    //std::vector<Ray> *nextrays = &cntx->rayVector2;
+    //std::vector<Ray> *tmprays = &cntx->workVector;
+    //tmprays->clear();
+    
+    // init radiance
+    Color radiance(0.0, 0.0, 0.0);
+    
+    // sky
+    SkyMaterial *skymat = scene->getSkyMaterial();
+    
+    // trace start
+    cntx->startWithRay(ray);
+    int depth = 0;
+    while(cntx->numInsidentRays() > 0) {
+        
+        // trace
+        int minDepth = cntx->config->minDepth;
+        int depthLimit = cntx->config->maxDepth;
+        
+        int raynum = (int)cntx->numInsidentRays();
+        cntx->startRayIteration();
+        for(int i = 0; i < raynum; i++) {
+            const Ray &inray = cntx->nextInsidentRay();
+            
+            Intersection intersect;
+            
+            // not intersected. pick background
+            if(!scene->isIntersect(inray, &intersect)) {
+                Color bgcol(0.0);
+                if(skymat != nullptr) {
+                    bgcol = skymat->skyColor(inray);
+                };
+                radiance += Color::mul(bgcol, inray.weight);
+                continue;
+            }
+            
+            // hit!
+            FinalIntersection fisect(intersect);
+            const SceneObject *hitobject = scene->getObject(intersect.objectId);
+            fisect.objectRef = hitobject;
+            
+            // from hit face info
+            const Material *hitmat = hitobject->getMaterialById(intersect.materialId);
+            fisect.material = hitmat;
+            fisect.computeTangentSpaceWithShadingNormal(hitmat->getShadingNormal(intersect));
+            
+            const Color emittance = hitmat->getEmittance(fisect);
+#if 1
+            radiance += Color::mul(emittance, inray.weight);
+#else
+            //+++++
+            // for debugging
+            // normal
+            radiance += fisect.shadingNormal * 0.5 + Vector3(0.5);
+            continue;
+            // color
+            //radiancecol += albedocol;
+            //continue;
+            //+++++
+#endif
+            // light sample?
+            
+            // trace next
+            R1hFPType russianprob = hitmat->getTerminationProbability(fisect);
+            //std::max(reflectance.r, std::max(reflectance.g, reflectance.b));
+            
+            if(depth < minDepth) {
+                russianprob = 1.0;
+            } else {
+                if(depth > depthLimit) {
+                    russianprob *= pow(0.5, depth - depthLimit);
+                }
+                if(cntx->random.next01() >= russianprob) {
+                    // russian roulette kill
+                    continue;
+                }
+            }
+            cntx->setRussianRouletteProbability(russianprob);
+            
+            hitmat->makeNextSampleRays(cntx, fisect, depth);
+        }
+        
+        cntx->swapRayBuffers();
+        ++depth;
+    }
+    
+    return radiance;
+}
+
 void Renderer::startWorker(Renderer *rndr, int workerId, Scene *scene) {
 	rndr->workerJob(workerId, scene);
 }
+
 
 

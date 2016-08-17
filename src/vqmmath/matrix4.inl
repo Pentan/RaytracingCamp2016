@@ -140,7 +140,28 @@ inline void Matrix4<FPType>::setScale(const FPType sx, const FPType sy, const FP
     m11 = sy;
     m22 = sz;
 }
-
+template<typename FPType>
+inline void Matrix4<FPType>::setBasis(const Vector3<FPType> &vx, const Vector3<FPType> &vy, const Vector3<FPType> &vz) {
+    m00 = vx.x;
+    m01 = vy.x;
+    m02 = vz.x;
+    m03 = 0.0;
+    
+    m10 = vx.y;
+    m11 = vy.y;
+    m12 = vz.y;
+    m13 = 0.0;
+    
+    m20 = vx.z;
+    m21 = vy.z;
+    m22 = vz.z;
+    m23 = 0.0;
+    
+    m30 = 0.0;
+    m31 = 0.0;
+    m32 = 0.0;
+    m33 = 1.0;
+}
 template<typename FPType>
 inline Vector4<FPType> Matrix4<FPType>::getColumn(const int col) const {
     FPType *tmpm = &m[col * 4];

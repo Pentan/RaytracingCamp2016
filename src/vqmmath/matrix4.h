@@ -57,6 +57,7 @@ template<typename FPType> union Matrix4 {
     inline void setTranslation(const FPType tx, const FPType ty, const FPType tz);
     inline void setRotation(const FPType rad, const FPType ax, const FPType ay, const FPType az);
     inline void setScale(const FPType sx, const FPType sy, const FPType sz);
+    inline void setBasis(const Vector3<FPType> &vx, const Vector3<FPType> &vy, const Vector3<FPType> &vz);
     
     inline Vector4<FPType> getColumn(const int col) const;
     inline void setColumn(const int col, const Vector4<FPType> &v);

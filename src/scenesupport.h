@@ -16,7 +16,7 @@ class SceneSupport {
 public:
 	static std::string getBasePath(const std::string& path, std::string* outfilename=nullptr);
 };
-
+/*
 /// simple material
 class ObjMaterial : public Material {
 public:
@@ -25,9 +25,10 @@ public:
 	
 	// override methods
 	Color skyColor(const Ray &ray) const;
-	Color getReflectance(const SceneObject *obj, const Intersection &isect) const;
+	//Color getReflectance(const SceneObject *obj, const Intersection &isect) const;
 	Color getEmittance(const SceneObject *obj, const Intersection &isect) const;
-	void makeNextRays(const Ray &ray, const SceneObject *obj, const Intersection &isect, const int depth, Random *rnd, std::vector<Ray> *outvecs) const;
+	virtual R1hFPType getTerminationProbability(const SceneObject *obj, const Intersection &isect) const;
+    void makeNextRays(const Ray &ray, const SceneObject *obj, const Intersection &isect, const int depth, Random *rnd, std::vector<Ray> *outvecs) const;
 	
 	//
 	void setKd(Color kd);
@@ -78,7 +79,8 @@ private:
 	int vnOffset;
 	int vtOffset;
 };
-
+*/
+    
 }
 
 

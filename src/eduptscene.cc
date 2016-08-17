@@ -11,7 +11,6 @@ enum ReflectionType {
 	DIFFUSE,
 	SPECULAR,
 	REFRACTION,
-	PAINT,
 	BACKGROUND
 };
 
@@ -25,7 +24,6 @@ bool EduptScene::load(Scene *scene, double aspect) {
 		Color diffuse;
 		ReflectionType type;
 	} spheres[] = {
-		
 		{1e5, Vector3( 1e5 + 1.0, 40.8, 81.6),    Color(), Color(0.75, 0.25, 0.25), DIFFUSE},
 		{1e5, Vector3(-1e5 + 99.0, 40.8, 81.6),   Color(), Color(0.25, 0.25, 0.75), DIFFUSE},
 		{1e5, Vector3(50.0, 40.8, 1e5),           Color(), Color(0.75, 0.75, 0.75), DIFFUSE},
@@ -36,18 +34,6 @@ bool EduptScene::load(Scene *scene, double aspect) {
 		{16.5, Vector3(27.0, 16.5, 47.0),         Color(), Color(0.99, 0.99, 0.99), SPECULAR},
 		{16.5, Vector3(77.0, 16.5, 78.0),         Color(), Color(0.99, 0.99, 0.99), REFRACTION},
 		{15.0, Vector3(50.0, 90.0, 81.6),         Color(36.0, 36.0, 36.0), Color(), DIFFUSE}
-		/*
-        {1e5, Vector3( 1e5 + 1.0, 40.8, 81.6),    Color(), Color(0.75, 0.25, 0.25), DIFFUSE},
-		{1e5, Vector3(-1e5 + 99.0, 40.8, 81.6),   Color(), Color(0.25, 0.25, 0.75), DIFFUSE},
-		{1e5, Vector3(50.0, 40.8, 1e5),           Color(), Color(0.75, 0.75, 0.75), DIFFUSE},
-		{1e5, Vector3(50.0, 40.8, 1e5 + 250.0),   Color(), Color(0.0),              DIFFUSE},
-		{1e5, Vector3(50.0, 1e5, 81.6),           Color(), Color(0.75, 0.75, 0.75), DIFFUSE},
-		{1e5, Vector3(50.0, 1e5 + 81.6, 81.6),    Color(), Color(0.75, 0.75, 0.75), DIFFUSE},
-		{20.0, Vector3(65.0, 20.0, 20.0),         Color(), Color(0.25, 0.75, 0.25), DIFFUSE},
-		{16.5, Vector3(27.0, 16.5, 47.0),         Color(), Color(0.75, 0.75, 0.25), PAINT},
-		{16.5, Vector3(77.0, 16.5, 78.0),         Color(), Color(0.25, 0.75, 0.75), PAINT},
-		{15.0, Vector3(50.0, 90.0, 81.6),         Color(36.0, 36.0, 36.0), Color(), DIFFUSE}
-        */
 	};
 	int numspheres = sizeof(spheres) /sizeof(SphereDef);
 	
@@ -59,26 +45,39 @@ bool EduptScene::load(Scene *scene, double aspect) {
 		Sphere *sphere = new Sphere(sphrdef.r, sphrdef.pos);
 		obj->setGeometry(GeometryRef(sphere));
 		
-		SingleBSDFMaterial *mat = new SingleBSDFMaterial();
+		Material *mat;
 		switch(sphrdef.type) {
 			case DIFFUSE:
-				mat->setBSDF(BSDFRef(new DiffuseBSDF()));
+            {
+                SingleBSDFMaterial *tmpmat = new SingleBSDFMaterial();
+				tmpmat->setBSDF(BSDFRef(new LambertBSDF()));
+                tmpmat->setColorTexture(SingleBSDFMaterial::kReflectance, sphrdef.diffuse);
+                tmpmat->setColorTexture(SingleBSDFMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
 				break;
 			case SPECULAR:
-				mat->setBSDF(BSDFRef(new SpecularBSDF()));
+            {
+                SingleBSDFMaterial *tmpmat = new SingleBSDFMaterial();
+                tmpmat->setBSDF(BSDFRef(new FullReflectionBSDF()));
+                tmpmat->setColorTexture(SingleBSDFMaterial::kReflectance, sphrdef.diffuse);
+                tmpmat->setColorTexture(SingleBSDFMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
 				break;
 			case REFRACTION:
-				mat->setBSDF(BSDFRef(new RefractionBSDF()));
-				break;
-			case PAINT:
-				mat->setBSDF(BSDFRef(new PaintBSDF()));
+            {
+                FineGlassMaterial *tmpmat = new FineGlassMaterial();
+                tmpmat->setColorTexture(FineGlassMaterial::kReflectance, Vector3(1.0)); //sphrdef.diffuse);
+                tmpmat->setColorTexture(FineGlassMaterial::kTransmittance, sphrdef.diffuse);
+                tmpmat->setColorTexture(FineGlassMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
 				break;
 			case BACKGROUND:
 				mat = nullptr;
 				break;
 		}
-		mat->setReflectanceColor(sphrdef.diffuse);
-		mat->setEmittanceColor(sphrdef.emittion);
 		obj->addMaterial(MaterialRef(mat));
 		
 		scene->addObject(SceneObjectRef(obj));
@@ -170,26 +169,39 @@ bool EduptScene::load2(Scene *scene, double aspect) {
 		//m.rotate(0.7, 0.0, 0.0, 1.0);
 		obj->setTransform(m);
 		
-		SingleBSDFMaterial *mat = new SingleBSDFMaterial();
-		switch(sphrdef.type) {
-			case DIFFUSE:
-				mat->setBSDF(BSDFRef(new DiffuseBSDF()));
-				break;
-			case SPECULAR:
-				mat->setBSDF(BSDFRef(new SpecularBSDF()));
-				break;
-			case REFRACTION:
-				mat->setBSDF(BSDFRef(new RefractionBSDF()));
-				break;
-			case PAINT:
-				mat->setBSDF(BSDFRef(new PaintBSDF()));
-				break;
-			case BACKGROUND:
-				mat = nullptr;
-				break;
-		}
-		mat->setReflectanceColor(sphrdef.diffuse);
-		mat->setEmittanceColor(sphrdef.emittion);
+        Material *mat;
+        switch(sphrdef.type) {
+            case DIFFUSE:
+            {
+                SingleBSDFMaterial *tmpmat = new SingleBSDFMaterial();
+                tmpmat->setBSDF(BSDFRef(new LambertBSDF()));
+                tmpmat->setColorTexture(SingleBSDFMaterial::kReflectance, sphrdef.diffuse);
+                tmpmat->setColorTexture(SingleBSDFMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
+                break;
+            case SPECULAR:
+            {
+                SingleBSDFMaterial *tmpmat = new SingleBSDFMaterial();
+                tmpmat->setBSDF(BSDFRef(new FullReflectionBSDF()));
+                tmpmat->setColorTexture(SingleBSDFMaterial::kReflectance, sphrdef.diffuse);
+                tmpmat->setColorTexture(SingleBSDFMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
+                break;
+            case REFRACTION:
+            {
+                FineGlassMaterial *tmpmat = new FineGlassMaterial();
+                tmpmat->setColorTexture(FineGlassMaterial::kReflectance, Vector3(1.0)); //sphrdef.diffuse);
+                tmpmat->setColorTexture(FineGlassMaterial::kTransmittance, sphrdef.diffuse);
+                tmpmat->setColorTexture(FineGlassMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
+                break;
+            case BACKGROUND:
+                mat = nullptr;
+                break;
+        }
 		obj->addMaterial(MaterialRef(mat));
 		
 		scene->addObject(SceneObjectRef(obj));
