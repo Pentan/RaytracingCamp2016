@@ -18,14 +18,13 @@ public:
 	enum MapType {
 		kUV,
 		kWorld,
-		kLocal,
-        kMapTypeMask    = 0xf,
-        
-        // for normal map
-        kWorldSpace     = 1 << 8,
-        kObjectSpace    = 2 << 8,
-        kTangentSpace   = 3 << 8,
-        kMapSpaceMask   = 0xf0
+		kLocal
+    };
+    // almostly for normal map
+    enum MapSpace {
+        kWorldSpace,
+        kObjectSpace,
+        kTangentSpace
     };
 	
 public:
@@ -33,25 +32,29 @@ public:
 	
 	// must override
 	virtual ~Texture();
-	virtual Color sample(const Vector3 &p) const = 0;
+    virtual Color sample(const Vector3 &p) const = 0;
 	
 	// option
-	virtual Color sample(const FinalIntersection *isect);
-	
+	virtual Color sample(const FinalIntersection *isect) const;
+    
+    virtual Vector3 sampleAsVector(const Vector3 &p) const;
+    virtual Vector3 sampleAsVector(const FinalIntersection *isect) const;
+    
 	virtual Vector3 applyTransform(const Vector3 &p) const;
 	virtual void setIsUseTransform(const bool isuse);
 	virtual void setTransform(const Matrix4 m);
 	
 	virtual void setMapType(int type);
-    virtual void addMapType(int type);
     virtual int getMapType() const;
+    virtual void setMapSpace(int spc);
     virtual int getMapSpace() const;
     
 private:
 	bool isUseTransform;
 	Matrix4 transform;
 	
-	int mapType;
+    int mapType;
+    int mapSpace;
 };
 
 typedef std::shared_ptr<Texture> TextureRef;

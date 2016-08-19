@@ -36,6 +36,13 @@ public:
     };
     
 public:
+    // correct  incorrect
+    // vi->|    vi->|
+    //   <-|ng    <-|ng
+    // vo<-|        |->vo
+    static bool isCurrectBRDF(const Vector3& vi, const Vector3& vo, const Vector3& ng);
+    
+public:
     virtual ~BSDF() {}
     
     virtual int getType() const = 0;

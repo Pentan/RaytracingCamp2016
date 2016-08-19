@@ -338,6 +338,8 @@ Color Renderer::computeRadiance(Context *cntx, Scene *scene, const Ray &ray) {
             if(depth < minDepth) {
                 russianprob = 1.0;
             } else {
+                russianprob = std::min(1.0, russianprob * inray.weight.getMaxComponent()); // how about this?
+                
                 if(depth > depthLimit) {
                     russianprob *= pow(0.5, depth - depthLimit);
                 }

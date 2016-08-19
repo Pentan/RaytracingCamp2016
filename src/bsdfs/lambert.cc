@@ -55,19 +55,25 @@ BSDF::Sample LambertBSDF::getSample(Renderer::Context *cntx, const FinalIntersec
     dir = Matrix4::mulV3(isect.inverseTangentSpaceBasis, dir);
     
     const Ray& inray = cntx->getCurrentInsidentRay();
+    Vector3 norm;
     if(Vector3::dot(inray.direction, isect.shadingNormal) < 0.0) {
         // from front
-        ret.position = isect.position;
-        ret.direction = dir;
-        ret.normal = isect.shadingNormal;
+        norm = isect.shadingNormal;
     } else {
         // from back
-        ret.position = isect.position;
-        ret.direction = dir * -1.0;
-        ret.normal = isect.shadingNormal * -1.0;
+        dir = dir * -1.0;
+        norm = isect.shadingNormal * -1.0;
     }
-    ret.bsdf = 1.0 / kPI;
+    ret.position = isect.position;
+    ret.direction = dir;
+    ret.normal = norm;
+    if(BSDF::isCurrectBRDF(inray.direction, dir, isect.geometryNormal)) {
+        ret.bsdf = 1.0 / kPI;
+    } else {
+        ret.bsdf = 0.0;
+    }
     ret.pdf = ndotd / kPI;
+    
     
     return ret;
 }

@@ -15,3 +15,11 @@ Ray BSDF::Sample::getRay() const {
     ray.weight.set(w, w, w);
     return ray;
 }
+
+bool BSDF::isCurrectBRDF(const Vector3& vi, const Vector3& vo, const Vector3& ng) {
+    if(Vector3::dot(vi, ng) * Vector3::dot(vo, ng) > 0.0) {
+        
+        return false;
+    }
+    return true;
+}

@@ -66,14 +66,6 @@ Vector3 SingleBSDFMaterial::getShadingNormal(const FinalIntersection &isect) con
     if(tex == nullptr) {
         return isect.hitNormal;
     } else {
-        Color normcol = tex->sample(&isect);
-        Vector3 ret;
-        
-        // FIXME
-        ret.x = normcol.r * 2.0 - 1.0;
-        ret.y = normcol.g * 2.0 - 1.0;
-        ret.z = normcol.b * 2.0 - 1.0;
-        
-        return ret;
+        return tex->sampleAsVector(&isect);
     }
 }

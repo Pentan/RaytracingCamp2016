@@ -55,6 +55,9 @@ Matrix4 SceneObject::getTransform() const {
 Vector3 SceneObject::toLocalPosition(const Vector3& wp) const {
 	return Matrix4::transformV3(iTransform, wp);
 }
+Vector3 SceneObject::toWorldNormal(const Vector3& ln) const {
+    return Matrix4::transformV3(itTransform, ln);
+}
 
 AABB SceneObject::getAABB() const {
 	return geometry->getAABB(transform);

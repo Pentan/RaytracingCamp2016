@@ -14,11 +14,17 @@ FullReflectionBSDF::~FullReflectionBSDF()
 BSDF::Sample FullReflectionBSDF::getSample(Renderer::Context *cntx, const FinalIntersection &isect) {
     const Ray inray = cntx->getCurrentInsidentRay();
     R1hFPType idotn = Vector3::dot(inray.direction, isect.shadingNormal);
+    const Vector3 vreflect = inray.direction - isect.shadingNormal * 2.0 * idotn;
+    
     Sample smpl;
     smpl.position = isect.position;
     smpl.normal = (idotn < 0.0)? isect.shadingNormal : (isect.shadingNormal * -1.0);
-    smpl.direction = inray.direction - isect.shadingNormal * 2.0 * idotn;
-    smpl.bsdf = 1.0 / std::abs(idotn);
+    smpl.direction = vreflect;
+    if(BSDF::isCurrectBRDF(inray.direction, vreflect, isect.geometryNormal)) {
+        smpl.bsdf = 1.0 / std::abs(idotn);
+    } else {
+        smpl.bsdf = 0.0;
+    }
     smpl.pdf = 1.0;
     
     return smpl;

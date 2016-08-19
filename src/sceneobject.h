@@ -29,7 +29,8 @@ public:
 	Matrix4 getTransform() const;
 	
 	Vector3 toLocalPosition(const Vector3& wp) const;
-	
+    Vector3 toWorldNormal(const Vector3& ln) const;
+    
 	AABB getAABB() const;
 	
 	void prepareRendering();
