@@ -67,3 +67,8 @@ R1hFPType SkyMaterial::getTerminationProbability(const FinalIntersection &isect)
 
 void SkyMaterial::makeNextSampleRays(Renderer::Context* cntx, const FinalIntersection &isect, const int depth) const {
 }
+
+Color SkyMaterial::evalShadowRay(Renderer::Context* cntx, const Ray &shadowray, const FinalIntersection &isect) const {
+    return Color(0.0);
+}
+

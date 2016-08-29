@@ -39,10 +39,12 @@ public:
     struct Face {
         int v0, v1, v2;
         int n0, n1, n2;
+        int t0, t1, t2;
         std::vector<AttrCoord> attrs;
         int matid;
 		
-		R1hFPType area;
+        R1hFPType area;
+        R1hFPType areaBorder;
 		Vector3 normal;
 		Vector3 tangent;
 		
@@ -51,6 +53,7 @@ public:
         
         void setV(const int a, const int b, const int c);
         void setN(const int a, const int b, const int c);
+        void setT(const int a, const int b, const int c);
         void addAttr(const int attrid, const int a, const int b, const int c);
     };
     
@@ -59,12 +62,15 @@ public:
     Mesh(const int vreserve=0, const int freserv=0);
     ~Mesh();
     
-    size_t addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &uv=0, const int uvid=-1);
+    size_t addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &t, const Vector3 &uv=0, const int uvid=-1);
     size_t addVertex(const Vector3 &v);
     size_t getVertexCount() const;
 	
 	size_t addNormal(const Vector3 &v);
     size_t getNormalCount() const;
+    
+    size_t addTangent(const Vector3 &v);
+    size_t getTangentCount() const;
     
 	size_t newAttributeContainer();
     size_t addAttribute(const int attrid, const Vector3 &v);
@@ -80,12 +86,14 @@ public:
     void calcSmoothNormals();
     void buildBVH();
 	
-	// override
+	//--- override ---
 	// Geometry
 	virtual AABB getAABB(const Matrix4& tm) const;
     virtual bool isIntersect(const Ray &ray, Intersection *intersect) const;
+    virtual SamplePoint getSamplePoint(Random *rng) const;
     virtual void prepareRendering();
-	// BVHLeaf
+	
+    // BVHLeaf
 	virtual bool isIntersectLeaf(int dataid, const Ray &ray, Intersection *intersect) const;
 	//bool triangleIntersect(const int faceid, const Ray &ray, Intersection *intersect) const;
 	

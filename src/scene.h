@@ -24,6 +24,10 @@ public:
     int addObject(SceneObjectRef objref);
     SceneObject* getObject(int objid) const;
 	int getObjectsCount() const;
+    
+    int addLightObject(SceneObjectRef objref);
+    SceneObject* getLightObject(int objid) const;
+    int getLightObjectsCount() const;
 	
     Camera* getCamera();
 	void setCamera(CameraRef camref);
@@ -45,6 +49,8 @@ private:
     CameraRef camera;
     std::vector<SceneObjectRef> sceneObjects;
     BVHNode *objectBVH;
+    
+    std::vector<SceneObjectRef> lightObjects;
     
     SkyMaterialRef skyMaterial;
 	

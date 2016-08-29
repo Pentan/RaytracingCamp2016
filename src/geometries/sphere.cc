@@ -66,3 +66,20 @@ bool Sphere::isIntersect(const Ray &ray, Intersection *intersect) const {
 	
 	return true;
 }
+
+Geometry::SamplePoint Sphere::getSamplePoint(Random *rng) const {
+    Geometry::SamplePoint ret;
+    
+    // uniform sphare sampling
+    R1hFPType z = 1.0 - 2.0 * rng->next01();
+    R1hFPType r = std::sqrt(std::max(0.0, 1.0 - z * z));
+    R1hFPType phi = 2.0 * kPI * rng->nextf();
+    Vector3 p(cos(phi) * r, sin(phi) * r, z);
+    
+    ret.position = p * radius + position;
+    ret.normal = Vector3::normalized(p);
+    ret.pdf = 1.0 / (4.0 * kPI * radius * radius);
+    
+    return ret;
+}
+

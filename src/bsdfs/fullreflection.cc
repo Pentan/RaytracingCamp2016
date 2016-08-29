@@ -1,4 +1,4 @@
-﻿
+﻿#include <cassert>
 #include "fullreflection.h"
 
 using namespace r1h;
@@ -30,9 +30,14 @@ BSDF::Sample FullReflectionBSDF::getSample(Renderer::Context *cntx, const FinalI
     return smpl;
 }
 R1hFPType FullReflectionBSDF::evaluate(const Sample& insident, const Sample& outgoing) {
-    const Vector3 &norm = outgoing.normal;
-    R1hFPType indot = Vector3::dot(insident.direction * -1.0, norm);
-    R1hFPType outdot = Vector3::dot(outgoing.direction, norm);
+    R1hFPType indot = Vector3::dot(insident.direction * -1.0, insident.normal);
+    R1hFPType outdot = Vector3::dot(outgoing.direction, outgoing.normal);
+    R1hFPType ndot = Vector3::dot(insident.normal, outgoing.normal);
+    
+    if(indot * outdot < 0.0 || (1.0 - ndot) > kEPS) {
+        // another side or different normal
+        return 0.0;
+    }
     
     return (std::abs(indot - outdot) < kEPS)? 1.0 / std::abs(outdot) : 0.0;
 }

@@ -5,7 +5,8 @@
 using namespace r1h;
 
 SceneObject::SceneObject():
-	geometry(nullptr)
+	geometry(nullptr),
+    lightMaterialCount(0)
 {}
 
 SceneObject::~SceneObject() {}
@@ -23,6 +24,9 @@ GeometryRef SceneObject::getGeometryRef() {
 
 int SceneObject::addMaterial(MaterialRef matref) {
 	materials.push_back(matref);
+    if(matref->isLight()) {
+        lightMaterialCount += 1;
+    }
 	return (int)materials.size() - 1;
 }
 
@@ -82,10 +86,22 @@ bool SceneObject::isIntersect(const Ray &ray, Intersection *intersect) {
 	//return geometry->isIntersect(ray, intersect);
 }
 
+Geometry::SamplePoint SceneObject::getSamplePoint(Random *rng) const {
+    Geometry::SamplePoint sp = geometry->getSamplePoint(rng);
+    // transform to world space
+    sp.position = Matrix4::transformV3(transform, sp.position);
+    sp.normal = Vector3::normalized(Matrix4::mulV3(itTransform, sp.normal));
+    return sp;
+}
+
 void SceneObject::setName(const std::string &newname) {
 	name = newname;
 }
 
 std::string SceneObject::getName() const {
 	return name;
+}
+
+bool SceneObject::isLight() const {
+    return materials.size() == lightMaterialCount;
 }

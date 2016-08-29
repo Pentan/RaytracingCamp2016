@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<scene version="0.1">
+	<!-- config -->
+	<!--
+		threads=0 : auto detect
+	-->
+	<renderer
+		type="pathtrace"
+		width="1280"
+		height="720"
+		subSamples="2"
+		samples="8"
+		minDepth="3"
+		maxDepth="8"
+		tileSize="16"
+        threads="0"
+        maxThreads="0"
+        
+        maxLimitTime="285.0"
+        renderMode="timelimit"
+        progressOutInterval="30.0"
+        
+		output="final_output.bmp"/>
+	
+    <!--
+     maxLimitTime="0"
+     renderMode="standard"
+     -->
+	<camera>
+		<transform>
+			<lookat 
+				position="-15.63, 3.496, -0.755"
+				lookat	="-7.58, 0.02, 2.55"
+				up		="0.0, 1.0, 0.0"/>
+		</transform>
+		<lens type="pinhole" focalLength="35.0" fNumber="0.0"/>
+		<sensor width="32.0" aspect="1.667"/>
+	</camera>
+	
+	<sky type="sphere">
+		<!-- <color type="rgb" r="0.5" g="0.5" b="0.5"/> -->
+		<texture type="image" src="items/Tropical_Beach_3k.hdr" />
+	</sky>
+	
+	<library></library>	
+	<!-- objects -->
+    <object>
+        <geometry type="mesh" src="items/Untitled.obj" />
+        
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_Rabbit_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_Rabbit_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_Rabbit_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_Rabbit_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_Shell2_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_Shell2_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_Shell2_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_Shell2_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_Shell3_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_Shell3_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_Shell3_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_Shell3_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_Shell1_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_Shell1_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_Shell1_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_Shell1_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_Beach_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_Beach_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_Beach_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_Beach_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+        <material type="simplephysical">
+            <albedo><texture type="image" src="items/Untitled_StarFish_albedo.tga" map="uv" flip="1"/></albedo>
+            <roughness><texture type="image" src="items/Untitled_StarFish_roughness.tga" map="uv" flip="1"/></roughness>
+            <metalness><texture type="image" src="items/Untitled_StarFish_metalness.tga" map="uv" flip="1"/></metalness>
+            <normal><texture type="image" src="items/Untitled_StarFish_normal.tga" map="uv" space="object" gamma="1.0" flip="1"/></normal>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    
+</scene>

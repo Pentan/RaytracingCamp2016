@@ -9,30 +9,28 @@ struct Ray {
     Vector3 origin;
     Vector3 direction;
     Color weight;
-	
+    int fromBSDF;
+    
     Ray() :
         origin(0.0, 0.0, 0.0),
 		direction(0.0, 0.0, -1.0),
-		weight(1.0)
+		weight(1.0),
+        fromBSDF(0)
     {};
     
-    Ray(const Vector3 &org, const Vector3 &dir):
+    Ray(const Vector3 &org, const Vector3 &dir, const int bsdft=-1):
 		origin(org),
 		direction(dir),
-		weight(1.0)
+        weight(1.0),
+        fromBSDF(bsdft)
     {};
     
-    Ray(const Vector3 &org, const Vector3 &dir, const Color &col):
+    Ray(const Vector3 &org, const Vector3 &dir, const Color &col, const int bsdft=-1):
 		origin(org),
 		direction(dir),
-		weight(col)
+        weight(col),
+        fromBSDF(bsdft)
     {};
-	
-    /*
-    void smallOffset(const Vector3 &n) {
-        origin += n * ((Vector3::dot(direction, n) > 0.0)? kEPS : -kEPS);
-    }
-	*/
     
 	Ray makeTransformed(Matrix4 m) const {
 		Ray ret = *this;

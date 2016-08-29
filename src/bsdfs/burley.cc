@@ -1,43 +1,21 @@
 ﻿#include <iostream>
-#include "lambert.h"
+#include "burley.h"
 
 using namespace r1h;
 
-LambertBSDF::LambertBSDF() {
+BurleyBSDF::BurleyBSDF():
+    roughness(0.5)
+{
 }
 
-LambertBSDF::~LambertBSDF() {
+BurleyBSDF::~BurleyBSDF() {
 }
 
-/*
-void LambertBSDF::makeNextRays(const Ray &ray, const Intersection &hp, const int depth, Random *rnd, std::vector<Ray> *outvecs) {
-	Vector3 w, u, v;
-	w = hp.orientingNormal(ray);
-	
-	if(fabs(w.x) > kEPS) {
-		u = Vector3::normalized(Vector3::cross(Vector3(0.0, 1.0, 0.0), w));
-	} else {
-		u = Vector3::normalized(Vector3::cross(Vector3(1.0, 0.0, 0.0), w));
-	}
-	v = Vector3::cross(w, u);
-	
-	// importance sampling using cosine.
-	const double r1 = 2.0 * kPI * rnd->next01();
-	const double r2 = rnd->next01();
-	const double r2s = sqrt(r2);
-	Vector3 dir = Vector3::normalized((
-		u * cos(r1) * r2s +
-		v * sin(r1) * r2s +
-		w * sqrt(1.0 - r2)
-	));
-	
-	Ray nextray;
-	nextray = Ray(hp.position, dir, Color(1.0, 1.0, 1.0));
-	outvecs->push_back(nextray);
+BSDF::Sample BurleyBSDF::getSample(Renderer::Context *cntx, const FinalIntersection &isect) {
+    return getSample(cntx, isect, roughness);
 }
-*/
 
-BSDF::Sample LambertBSDF::getSample(Renderer::Context *cntx, const FinalIntersection &isect) {
+BSDF::Sample BurleyBSDF::getSample(Renderer::Context *cntx, const FinalIntersection &isect, const R1hFPType rough) {
     // importance sampling using cosine distoribution.
     BSDF::Sample ret;
     
@@ -68,7 +46,21 @@ BSDF::Sample LambertBSDF::getSample(Renderer::Context *cntx, const FinalIntersec
     ret.direction = dir;
     ret.normal = norm;
     if(BSDF::isCurrectBRDF(inray.direction, dir, isect.geometryNormal)) {
-        ret.bsdf = 1.0 / kPI;
+        Vector3 vi = inray.direction * -1.0;
+        Vector3 vl = dir;
+        Vector3 vh = (vi + vl) * 0.5;
+        vh.normalize();
+        
+        R1hFPType costl = Vector3::dot(norm, vl);
+        R1hFPType costv = Vector3::dot(norm, vi);
+        R1hFPType costd = Vector3::dot(vh, vl);
+        
+        R1hFPType FD90 = 0.5 + 2.0 * costd * costd * rough;
+        R1hFPType L = 1.0 + (FD90 - 1.0) * std::pow(1.0 - costl, 5.0);
+        R1hFPType V = 1.0 + (FD90 - 1.0) * std::pow(1.0 - costv, 5.0);
+        
+        ret.bsdf = L * V / kPI;
+        
     } else {
         ret.bsdf = 0.0;
     }
@@ -77,7 +69,8 @@ BSDF::Sample LambertBSDF::getSample(Renderer::Context *cntx, const FinalIntersec
     return ret;
 }
 
-R1hFPType LambertBSDF::evaluate(const Sample& insident, const Sample& outgoing) {
+R1hFPType BurleyBSDF::evaluate(const Sample& insident, const Sample& outgoing) {
+    /*
     R1hFPType idot = Vector3::dot(insident.direction, insident.normal);
     R1hFPType odot = Vector3::dot(outgoing.direction, outgoing.normal);
     R1hFPType ndot = Vector3::dot(insident.normal, outgoing.normal);
@@ -89,9 +82,20 @@ R1hFPType LambertBSDF::evaluate(const Sample& insident, const Sample& outgoing) 
         // another side
         return 0.0;
     }
+     */
+    // TODO
+    return 0.0;
 }
 
-R1hFPType LambertBSDF::probabilityForSample(const Sample& insident, const Sample& smpl) {
+R1hFPType BurleyBSDF::probabilityForSample(const Sample& insident, const Sample& smpl) {
     return Vector3::dot(smpl.direction, smpl.normal) / kPI;
+}
+
+void BurleyBSDF::setRoughness(R1hFPType r) {
+    roughness = r;
+}
+
+R1hFPType BurleyBSDF::getRoughness() const {
+    return roughness;
 }
 

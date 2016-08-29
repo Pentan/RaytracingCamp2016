@@ -8,7 +8,7 @@
 #include "wavefrontobj.h"
 #include "scene.h"
 #include "sceneobject.h"
-#include "mesh.h"
+#include "geometries/geometry_include.h"
 
 namespace r1h {
 

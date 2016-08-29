@@ -9,7 +9,7 @@ class XorShift {
     unsigned int seed_[4];
 public:
 	/// get [0, UINT_MAX)
-    unsigned int next(void) {
+    unsigned int nexti(void) {
         const unsigned int t = seed_[0] ^ (seed_[0] << 11);
         seed_[0] = seed_[1];
         seed_[1] = seed_[2];
@@ -19,15 +19,15 @@ public:
 	
 	/// get [0, 1)
 	double nextf(void) {
-        return (double)next() / (UINT_MAX + 1.0);
+        return (double)nexti() / (UINT_MAX + 1.0);
     }
 	/// get [0, 1]
     double next01(void) {
-        return (double)next() / UINT_MAX;
+        return (double)nexti() / UINT_MAX;
     }
     /// get (-1, 1)
     double next11(void) {
-        return (double)(next() + 0.5) / (UINT_MAX + 1.0) * 2.0 - 1.0;
+        return (double)(nexti() + 0.5) / (UINT_MAX + 1.0) * 2.0 - 1.0;
     }
 	
     void setSeed(const unsigned int iseed) {

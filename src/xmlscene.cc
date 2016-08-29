@@ -7,9 +7,8 @@
 #include "camera.h"
 #include "xmlscene.h"
 #include "scenesupport.h"
-#include "material.h"
-#include "sphere.h"
-#include "aabbgeometry.h"
+#include "materials/material.h"
+#include "geometries/geometry_include.h"
 #include "xmlobjloader.h"
 
 using namespace r1h;
@@ -55,6 +54,8 @@ private:
 	//
     MaterialRef parseSingleBSDFMaterial(tinyxml2::XMLElement *elm);
     MaterialRef parseFineGlassMaterial(tinyxml2::XMLElement *elm);
+    MaterialRef parseLightMaterial(tinyxml2::XMLElement *elm);
+    MaterialRef parseSimplePhysicalMaterial(tinyxml2::XMLElement *elm);
     
 };
 
@@ -127,7 +128,8 @@ bool XMLSceneLoader::XMLParser::parseRenderConfig(tinyxml2::XMLElement *elm) {
 	
 	Renderer *rndr = loader->getRederer();
 	Renderer::Config conf = rndr->getConfig();
-	
+	std::string tmpstr;
+    
 	checkIntAttribute(elm, "width", &conf.width);
 	checkIntAttribute(elm, "height", &conf.height);
 	checkIntAttribute(elm, "samples", &conf.samples);
@@ -136,8 +138,20 @@ bool XMLSceneLoader::XMLParser::parseRenderConfig(tinyxml2::XMLElement *elm) {
 	checkIntAttribute(elm, "maxDepth", &conf.maxDepth);
 	checkIntAttribute(elm, "tileSize", &conf.tileSize);
 	checkIntAttribute(elm, "threads", &conf.defaultThreads);
+    checkIntAttribute(elm, "maxThreads", &conf.maxThreads);
+    checkFloatAttribute(elm, "progressOutInterval", &conf.progressOutInterval);
+    checkFloatAttribute(elm, "maxLimitTime", &conf.maxLimitTime);
 	checkStringAttribute(elm, "output", &conf.outputFile);
-	
+    if(checkStringAttribute(elm, "renderMode", &tmpstr)) {
+        if(tmpstr.compare("standard") == 0) {
+            conf.renderMode = Renderer::kStandard;
+        }
+        else if(tmpstr.compare("timelimit") == 0) {
+            conf.renderMode = Renderer::kTimeLimit;
+        }
+        
+    }
+    
 	rndr->setConfig(conf);
 	
 	std::cout << "done" << std::endl;
@@ -327,7 +341,11 @@ bool XMLSceneLoader::XMLParser::parseObject(tinyxml2::XMLElement *elm) {
 	}
 	
 	if(scnobj != nullptr) {
-		scn->addObject(SceneObjectRef(scnobj));
+        if(scnobj->isLight()) {
+            scn->addLightObject(SceneObjectRef(scnobj));
+        } else {
+            scn->addObject(SceneObjectRef(scnobj));
+        }
 	}
 	
 	return true;
@@ -448,7 +466,17 @@ MaterialRef XMLSceneLoader::XMLParser::parseMaterialElement(tinyxml2::XMLElement
 		if(checkStringAttribute(elm, "type", &mattype)) {
 			if(mattype.compare("singlebsdf") == 0) {
 				ret = parseSingleBSDFMaterial(elm);
-			}
+            }
+            else if(mattype.compare("fineglass") == 0) {
+                ret = parseFineGlassMaterial(elm);
+            }
+            else if(mattype.compare("light") == 0) {
+                ret = parseLightMaterial(elm);
+            }
+            else if(mattype.compare("simplephysical") == 0) {
+                ret = parseSimplePhysicalMaterial(elm);
+            }
+            
 		} else {
 			std::cerr << "illegal material" << std::endl;
 			assert(false);
@@ -533,7 +561,15 @@ BSDFRef XMLSceneLoader::XMLParser::parseBSDFElement(tinyxml2::XMLElement *elm) {
 	if(type.compare("lambert") == 0) {
 		ret = BSDFRef(new LambertBSDF());
 		
-	} else if(type.compare("fullrefraction") == 0) {
+    } else if(type.compare("burley") == 0) {
+        BurleyBSDF *tmpbsdf = new BurleyBSDF();
+        R1hFPType roughness;
+        if(checkFloatAttribute(elm, "roughness", &roughness)) {
+            tmpbsdf->setRoughness(roughness);
+        }
+        ret = BSDFRef(tmpbsdf);
+        
+    }  else if(type.compare("fullrefraction") == 0) {
 		FullRefractionBSDF *tmpbsdf = new FullRefractionBSDF();
 		R1hFPType ior;
 		if(checkFloatAttribute(elm, "ior", &ior)) {
@@ -547,7 +583,18 @@ BSDFRef XMLSceneLoader::XMLParser::parseBSDFElement(tinyxml2::XMLElement *elm) {
 	} else if(type.compare("translucent") == 0) {
 		ret = BSDFRef(new TranslucentBSDF());
 
-	} else {
+    } else if(type.compare("ggx") == 0) {
+        GGXBSDF *tmpbsdf = new GGXBSDF();
+        R1hFPType tmpfattr;
+        if(checkFloatAttribute(elm, "roughness", &tmpfattr)) {
+            tmpbsdf->setRoughness(tmpfattr);
+        }
+        if(checkFloatAttribute(elm, "fresnelIor", &tmpfattr)) {
+            tmpbsdf->setFresnelIor(tmpfattr);
+        }
+        ret = BSDFRef(tmpbsdf);
+        
+    }   else {
 		std::cerr << "illegal BSDF:" << type << std::endl;
 		assert(false);
 	}
@@ -812,13 +859,13 @@ MaterialRef XMLSceneLoader::XMLParser::parseFineGlassMaterial(tinyxml2::XMLEleme
         } else if(strcmp(elmname, "normal") == 0) {
             Color tmpcol;
             if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
-                mat->setColorTexture(SingleBSDFMaterial::kNormalMap, tmpcol);
+                mat->setColorTexture(FineGlassMaterial::kNormalMap, tmpcol);
             } else {
                 // texture
                 tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
                 TextureRef tex = parseTextureElement(texelm);
                 assert(tex.get());
-                mat->setTexture(SingleBSDFMaterial::kNormalMap, tex);
+                mat->setTexture(FineGlassMaterial::kNormalMap, tex);
             }
         }
         
@@ -827,6 +874,105 @@ MaterialRef XMLSceneLoader::XMLParser::parseFineGlassMaterial(tinyxml2::XMLEleme
     return MaterialRef(mat);
 }
 
+MaterialRef XMLSceneLoader::XMLParser::parseLightMaterial(tinyxml2::XMLElement *elm) {
+    std::cout << "parseLightMaterial" << std::endl;
+    LightMaterial *mat = new LightMaterial();
+    
+    Vector3 tmpbias;
+    if(checkVector3Attribute(elm, "colorBias", &tmpbias)) {
+        Color colbias(tmpbias.x, tmpbias.y, tmpbias.z);
+        mat->setColorBias(colbias);
+    }
+    
+    tinyxml2::XMLElement *tmpelm = elm->FirstChildElement();
+    while(tmpelm) {
+        const char *elmname = tmpelm->Name();
+        
+        if(strcmp(elmname, "emittance") == 0) {
+            Color tmpcol;
+            if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
+                mat->setColorTexture(LightMaterial::kEmittance, tmpcol);
+            } else {
+                // texture
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                mat->setTexture(LightMaterial::kEmittance, tex);
+            }
+        } else if(strcmp(elmname, "normal") == 0) {
+            Color tmpcol;
+            if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
+                mat->setColorTexture(LightMaterial::kNormalMap, tmpcol);
+            } else {
+                // texture
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                mat->setTexture(LightMaterial::kNormalMap, tex);
+            }
+        }
+        
+        tmpelm = tmpelm->NextSiblingElement();
+    }
+    return MaterialRef(mat);
+}
+
+/////
+MaterialRef XMLSceneLoader::XMLParser::parseSimplePhysicalMaterial(tinyxml2::XMLElement *elm) {
+    std::cout << "parseSimplePhysicalMaterial" << std::endl;
+    SimplePhysicalMaterial *mat = new SimplePhysicalMaterial();
+    
+    R1hFPType tmpf;
+    if(checkFloatAttribute(elm, "diffuseRoughness", &tmpf)) {
+        mat->setDiffuseRoughness(tmpf);
+    }
+    if(checkFloatAttribute(elm, "specularIor", &tmpf)) {
+        mat->setSpecularIor(tmpf);
+    }
+    
+    tinyxml2::XMLElement *tmpelm = elm->FirstChildElement();
+    while(tmpelm) {
+        const char *elmname = tmpelm->Name();
+        int textarget = -1;
+        
+        if(strcmp(elmname, "albedo") == 0) {
+            textarget = SimplePhysicalMaterial::kAlbedo;
+        }
+        else if(strcmp(elmname, "emittance") == 0) {
+            textarget = SimplePhysicalMaterial::kEmittance;
+        }
+        else if(strcmp(elmname, "normal") == 0) {
+            textarget = SimplePhysicalMaterial::kNormalMap;
+        }
+        else if(strcmp(elmname, "roughness") == 0) {
+            textarget = SimplePhysicalMaterial::kRoughness;
+        }
+        else if(strcmp(elmname, "metalness") == 0) {
+            textarget = SimplePhysicalMaterial::kMetalness;
+        }
+        
+        if(textarget >= 0) {
+            Color tmpcol;
+            R1hFPType tmpf;
+            if(checkColorAttribute(tmpelm, "color", &tmpcol)) {
+                mat->setColorTexture(textarget, tmpcol);
+            }
+            else if(checkFloatAttribute(tmpelm, "value", &tmpf)) {
+                mat->setColorTexture(textarget, Color(tmpf));
+            }
+            else {
+                // texture
+                tinyxml2::XMLElement *texelm = tmpelm->FirstChildElement();
+                TextureRef tex = parseTextureElement(texelm);
+                assert(tex.get());
+                mat->setTexture(textarget, tex);
+            }
+        }
+        
+        tmpelm = tmpelm->NextSiblingElement();
+    }
+    return MaterialRef(mat);
+}
 
 //////////
 XMLSceneLoader::XMLSceneLoader():

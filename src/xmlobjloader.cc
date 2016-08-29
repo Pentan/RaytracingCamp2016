@@ -1,6 +1,6 @@
 
 #include "xmlobjloader.h"
-#include "material.h"
+#include "materials/material_include.h"
 
 using namespace r1h;
 

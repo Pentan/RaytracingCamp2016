@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <r1htypes.h>
+#include <random.h>
 #include <ray.h>
 #include <aabb.h>
 #include <intersection.h>
@@ -13,12 +14,21 @@ namespace r1h {
 	
 class Geometry : public Asset {
 public:
+    struct SamplePoint {
+        Vector3 position;
+        Vector3 normal;
+        R1hFPType pdf;
+    };
+    
+public:
     Geometry() {}
     virtual ~Geometry() {};
     
     virtual AABB getAABB(const Matrix4& tm) const = 0;
     virtual bool isIntersect(const Ray &ray, Intersection *intersect) const = 0;
 	
+    virtual SamplePoint getSamplePoint(Random *rng) const = 0;
+    
 	// optional
 	virtual void prepareRendering() { /* ex.:build VBH for mesh */ }
 };

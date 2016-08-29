@@ -144,8 +144,8 @@ Ray Camera::getRay(const double tx, const double ty, Random *rnd) const {
 	
     dir.normalize();
 	 */
-	
-    return Ray(eyep, dir);
+    
+    return Ray(eyep, dir, BSDF::kSensor);
 }
 
 bool Camera::apertureTest(R1hFPType u, R1hFPType v) const {

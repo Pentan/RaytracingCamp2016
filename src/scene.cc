@@ -5,8 +5,7 @@
 
 #include "scene.h"
 #include "camera.h"
-#include "geometry.h"
-#include "mesh.h"
+#include "geometries/geometry_include.h"
 #include "bsdfs/bsdf_include.h"
 #include "materials/material_include.h"
 #include "bvhnode.h"
@@ -16,8 +15,7 @@
 #include "aabb.h"
 #include "scenesupport.h"
 //#include "xmlscene.h"
-
-#include "aabbgeometry.h"
+//#include "aabbgeometry.h"
 
 ///
 using namespace r1h;
@@ -39,7 +37,8 @@ Scene::~Scene() {
 
 int Scene::addObject(SceneObjectRef objref) {
 	sceneObjects.push_back(objref);
-    return (int)sceneObjects.size() - 1;
+    objref->objectId = (int)sceneObjects.size() - 1;
+    return objref->objectId;
 };
 
 SceneObject* Scene::getObject(int objid) const {
@@ -51,6 +50,23 @@ SceneObject* Scene::getObject(int objid) const {
 
 int Scene::getObjectsCount() const {
 	return (int)sceneObjects.size();
+}
+
+int Scene::addLightObject(SceneObjectRef objref) {
+    lightObjects.push_back(objref);
+    addObject(objref);
+    return (int)lightObjects.size() - 1;
+}
+
+SceneObject* Scene::getLightObject(int objid) const {
+    if(objid < 0 || objid >= lightObjects.size()) {
+        return nullptr;
+    }
+    return lightObjects[objid].get();
+}
+
+int Scene::getLightObjectsCount() const {
+    return (int)lightObjects.size();
 }
 
 // render

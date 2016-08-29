@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<scene version="0.1">
+	<!-- config -->
+	<!--
+		threads=0 : auto detect
+	-->
+	<renderer
+		type="pathtrace"
+		width="800"
+		height="600"
+		subSamples="2"
+		samples="8"
+		minDepth="3"
+		maxDepth="8"
+		tileSize="16"
+        threads="0"
+        maxThreads="0"
+        
+        maxLimitTime="300.0"
+        renderMode="timelimit"
+        progressOutInterval="0.0"
+        
+		output="materialtest2.bmp"/>
+	
+    <!--
+     maxLimitTime="0"
+     renderMode="standard"
+     -->
+	<camera>
+		<transform>
+			<lookat 
+				position="0.0, 6.0, 8.0"
+				lookat	="0.0, 0.0, 1.0"
+				up		="0.0, 1.0, 0.0"/>
+		</transform>
+		<lens type="pinhole" focalLength="28.0" fNumber="0.0"/>
+		<sensor width="24.0" aspect="1.33"/>
+	</camera>
+	
+	<sky type="sphere">
+		<!-- <color type="rgb" r="0.5" g="0.5" b="0.5"/> -->
+		<texture type="image" src="images/uffizi-large.hdr" />
+	</sky>
+	
+	<library></library>
+	
+	<!-- floor -->
+	<object id="floor">
+        <geometry type="cube" position="0.0, -1.5, 0.0" size="20.0, 0.5, 20.0"/>
+        <material type="singlebsdf">
+            <bsdf type="burley" roughness="0.5"/>
+            <reflectance color="0.2, 0.2, 0.2"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+	</object>
+	
+	<!-- objects -->
+    <object>
+        <geometry type="sphere" position="2.5, 0.0, -2.5" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.0"/>
+            <metalness value="0.0"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    <object>
+        <geometry type="sphere" position="0.0, 0.0, -2.5" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.0"/>
+            <metalness value="0.5"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    <object>
+        <geometry type="sphere" position="-2.5, 0.0, -2.5" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.0"/>
+            <metalness value="0.9"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    
+	<object>
+        <geometry type="sphere" position="2.5, 0.0, 0.0" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.5"/>
+            <metalness value="0.0"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+	</object>
+	<object>
+        <geometry type="sphere" position="0.0, 0.0, 0.0" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.5"/>
+            <metalness value="0.5"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+	<object>
+        <geometry type="sphere" position="-2.5, 0.0, 0.0" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="0.5"/>
+            <metalness value="0.9"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+	</object>
+    
+    <object>
+        <geometry type="sphere" position="2.5, 0.0, 2.5" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="1.0"/>
+            <metalness value="0.0"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    <object>
+        <geometry type="sphere" position="0.0, 0.0, 2.5" radius="1.0"/>
+        <material type="simplephysical">
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="1.0"/>
+            <metalness value="0.5"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    <object>
+        <geometry type="sphere" position="-2.5, 0.0, 2.5" radius="1.0"/>
+        <material type="simplephysical" >
+            <albedo color="0.8, 0.2, 0.2"/>
+            <roughness value="1.0"/>
+            <metalness value="0.9"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    
+    <!--
+    <object>
+        <geometry type="sphere" position="-2.5, 0.0, -5.0" radius="1.0"/>
+        <material type="singlebsdf">
+            <bsdf type="ggx" roughness="0.0"/>
+            <reflectance color="0.8, 0.2, 0.2"/>
+            <emittance color="0.0, 0.0, 0.0"/>
+        </material>
+    </object>
+    -->
+    
+    <!-- light source object -->
+	<object id="light">
+		<geometry type="sphere" position="0.0, 10.0, 0.0" radius="1.5"/>
+		<material type="light">
+			<emittance color="80.0, 80.0, 80.0"/>
+		</material>
+	</object>
+</scene>

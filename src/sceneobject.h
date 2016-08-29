@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "material.h"
-#include "geometry.h"
+#include "materials/material_include.h"
+#include "geometries/geometry_include.h"
 #include "intersection.h"
 #include "aabb.h"
 
@@ -36,21 +36,26 @@ public:
 	void prepareRendering();
 	
 	bool isIntersect(const Ray &ray, Intersection *intersect);
-	
-	//+++++
-	//int objectId;
+    Geometry::SamplePoint getSamplePoint(Random *rng) const;
 	
 	void setName(const std::string &newname);
 	std::string getName() const;
-
+    
+    bool isLight() const;
+    
+public:
+    int objectId;
+    
 private:
 	GeometryRef geometry;
 	std::vector<MaterialRef> materials;
-	std::string name;
+    std::string name;
+    size_t lightMaterialCount;
 
 	Matrix4 transform;
 	Matrix4 iTransform;
-	Matrix4 itTransform;
+    Matrix4 itTransform;
+    
 };
 
 typedef std::shared_ptr<SceneObject> SceneObjectRef;

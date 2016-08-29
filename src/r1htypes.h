@@ -15,6 +15,7 @@ typedef double R1hFPType;
 const R1hFPType kPI = 3.14159265358979323846;
 const R1hFPType kINF = 1e128;
 const R1hFPType kEPS = 1e-8;
+#define kSmallOffset    kEPS
 
 typedef vqm::Vector3<R1hFPType> Vector3;
 typedef vqm::Vector4<R1hFPType> Vector4;

@@ -11,14 +11,19 @@
 #include "framebuffer.h"
 #include "ray.h"
 #include "intersection.h"
+#include "commandqueue.h"
 
 namespace r1h {
 
 class Scene;
-class RenderCommandQueue;
 
 class Renderer {
 public:
+    enum RenderMode {
+        kStandard,
+        kTimeLimit
+    };
+    
 	struct Config {
         int width;
         int height;
@@ -27,7 +32,11 @@ public:
         int minDepth;
         int maxDepth;
         int defaultThreads;
+        int maxThreads;
         int tileSize;
+        RenderMode renderMode;
+        R1hFPType progressOutInterval;
+        R1hFPType maxLimitTime;
 		std::string outputFile;
 		
         Config(): // make default values
@@ -38,7 +47,11 @@ public:
         minDepth(3),
 		maxDepth(32),
 		defaultThreads(4),
-		tileSize(32),
+        maxThreads(0),      // 0 is unlimited
+        tileSize(32),
+        renderMode(kStandard),
+        progressOutInterval(0.0),
+        maxLimitTime(0.0),
 		outputFile("output.bmp")
         {}
     };
@@ -58,6 +71,7 @@ public:
 		const Config *config;
 		int state;
         double tileProgress;
+        bool killRequest;
         
         Context();
         ~Context();
@@ -77,8 +91,8 @@ public:
         void setRussianRouletteProbability(R1hFPType p);
         //void calcIncidentWeight(const FinalIntersection &isect);
         
-        Ray& emitRay(const Vector3 &orig, const Vector3 &dir, const Color &weight);
-        Ray& emitRay(const Ray &newray, const Color &reflectance);
+        Ray& emitRay(const Vector3 &orig, const Vector3 &dir, const Color &weight, const int bsdftype);
+        Ray& emitRay(const Ray &newray, const Color &reflectance, const int bsdftype);
         
     private:
         std::vector<Ray> rayVector1;
@@ -105,7 +119,7 @@ public:
 	double getRenderProgress() const;
     
     size_t getRecderContextCount() const;
-    const Context* getRenderContext(int cntxid) const;
+    Context* getRenderContext(int cntxid);
 	
     bool isFinished() const;
     
@@ -117,13 +131,19 @@ private:
     
 	std::vector<Context> *renderContexts;
     
-    // worker
+    // for worker
 	int pushedCommandCount;
     RenderCommandQueue *renderQueue;
     std::vector<std::thread> workers;
-	void renderTile(Context *cntx, Scene *scene, FrameBuffer::Tile tile);
-	
-    Color computeRadiance(Context *cntx, Scene *scene, const Ray &ray);
+    
+    void setRenderTileCommands();
+    
+    RenderCommandQueue::Command popRenderCommand();
+    void renderTile(Context *cntx, Scene *scene, FrameBuffer::Tile tile);
+    Color computeRadiancePT(Context *cntx, Scene *scene, const Ray &ray);
+    Color computeRadianceNEE(Context *cntx, Scene *scene, const Ray &ray);
+    
+    Color evaluateShadowRay(Context *cntx, Scene *scene, int lightId, const FinalIntersection &isect);
     
 	static void startWorker(Renderer *rndr, int workerId, Scene *scene);
 };

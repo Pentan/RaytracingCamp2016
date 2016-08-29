@@ -1,9 +1,7 @@
 
 #include "eduptscene.h"
-#include "sphere.h"
+#include "geometries/geometry_include.h"
 #include "sceneobject.h"
-#include "mesh.h"
-#include "material.h"
 
 using namespace r1h;
 
@@ -11,6 +9,7 @@ enum ReflectionType {
 	DIFFUSE,
 	SPECULAR,
 	REFRACTION,
+    LIGHT,
 	BACKGROUND
 };
 
@@ -33,7 +32,8 @@ bool EduptScene::load(Scene *scene, double aspect) {
 		{20.0, Vector3(65.0, 20.0, 20.0),         Color(), Color(0.25, 0.75, 0.25), DIFFUSE},
 		{16.5, Vector3(27.0, 16.5, 47.0),         Color(), Color(0.99, 0.99, 0.99), SPECULAR},
 		{16.5, Vector3(77.0, 16.5, 78.0),         Color(), Color(0.99, 0.99, 0.99), REFRACTION},
-		{15.0, Vector3(50.0, 90.0, 81.6),         Color(36.0, 36.0, 36.0), Color(), DIFFUSE}
+		{15.0, Vector3(50.0, 90.0, 81.6),         Color(36.0, 36.0, 36.0), Color(), LIGHT}
+        //{5.0, Vector3(65.0, 20.0, 20.0),         Color(36.0, 36.0, 36.0), Color(), LIGHT}
 	};
 	int numspheres = sizeof(spheres) /sizeof(SphereDef);
 	
@@ -74,13 +74,26 @@ bool EduptScene::load(Scene *scene, double aspect) {
                 mat = tmpmat;
             }
 				break;
+            case LIGHT:
+            {
+                LightMaterial *tmpmat = new LightMaterial();
+                tmpmat->setColorTexture(LightMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
+                break;
 			case BACKGROUND:
+                // passthrough
+            default:
 				mat = nullptr;
 				break;
 		}
 		obj->addMaterial(MaterialRef(mat));
 		
-		scene->addObject(SceneObjectRef(obj));
+        if(sphrdef.type == LIGHT) {
+            scene->addLightObject(SceneObjectRef(obj));
+        } else {
+            scene->addObject(SceneObjectRef(obj));
+        }
 	}
 	/*
 	/////
@@ -198,13 +211,25 @@ bool EduptScene::load2(Scene *scene, double aspect) {
                 mat = tmpmat;
             }
                 break;
+            case LIGHT:
+            {
+                LightMaterial *tmpmat = new LightMaterial();
+                tmpmat->setColorTexture(LightMaterial::kEmittance, sphrdef.emittion);
+                mat = tmpmat;
+            }
+                break;
             case BACKGROUND:
                 mat = nullptr;
                 break;
         }
 		obj->addMaterial(MaterialRef(mat));
 		
-		scene->addObject(SceneObjectRef(obj));
+        
+        if(sphrdef.type == LIGHT) {
+            scene->addLightObject(SceneObjectRef(obj));
+        } else {
+            scene->addObject(SceneObjectRef(obj));
+        }
 	}
 	
 	// bg

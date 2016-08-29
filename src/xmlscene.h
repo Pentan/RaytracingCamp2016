@@ -6,7 +6,7 @@
 
 #include "scene.h"
 #include "renderer.h"
-#include "texture.h"
+#include "textures/texture_include.h"
 
 namespace r1h {
 

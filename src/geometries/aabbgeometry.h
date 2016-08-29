@@ -16,6 +16,7 @@ public:
     AABB getAABB(const Matrix4& tm) const;
     
     bool isIntersect(const Ray &ray, Intersection *intersect) const;
+    SamplePoint getSamplePoint(Random *rng) const;
 };
 
 }

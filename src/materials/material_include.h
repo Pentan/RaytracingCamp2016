@@ -5,5 +5,7 @@
 #include "singlebsdfmaterial.h"
 #include "fineglass.h"
 #include "skymaterial.h"
+#include "lightmaterial.h"
+#include "sppmaterial.h"
 
 #endif

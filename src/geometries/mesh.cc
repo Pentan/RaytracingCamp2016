@@ -10,9 +10,9 @@ const int Mesh::kTypeID = 'MESH';
 Mesh::Face::Face() : matid(-1) {}
 Mesh::Face::Face(const int a, const int b, const int c, const int m) {
 	AttrCoord aco = {0, a, b, c};
-	v0 = n0 = a;
-	v1 = n1 = b;
-	v2 = n2 = c;
+	v0 = n0 = t0 = a;
+	v1 = n1 = t1 = b;
+	v2 = n2 = t2 = c;
 	attrs.push_back(aco);
 	matid = m;
 }
@@ -26,6 +26,11 @@ void Mesh::Face::setN(const int a, const int b, const int c) {
 	n0 = a;
 	n1 = b;
 	n2 = c;
+}
+void Mesh::Face::setT(const int a, const int b, const int c) {
+    t0 = a;
+    t1 = b;
+    t2 = c;
 }
 void Mesh::Face::addAttr(const int attrid, const int a, const int b, const int c) {
 	AttrCoord aco = {attrid, a, b, c};
@@ -41,6 +46,7 @@ Mesh::Mesh(const int vreserve, const int freserv):
 	if(vreserve > 0) {
 		vertices.reserve(vreserve);
 		normals.reserve(vreserve);
+        tangents.reserve(vreserve);
 	}
 	if(freserv > 0) {
 		faces.reserve(freserv);
@@ -55,9 +61,10 @@ Mesh::~Mesh() {
 	}
 }
 
-size_t Mesh::addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &uv, const int uvid) {
+size_t Mesh::addVertexWithAttrs(const Vector3 &p, const Vector3 &n, const Vector3 &t, const Vector3 &uv, const int uvid) {
 	size_t ret = addVertex(p);
 	addNormal(n);
+    addTangent(t);
 	if(uvid >= 0) {
 		addAttribute(uvid, uv);
 	}
@@ -79,6 +86,15 @@ size_t Mesh::addNormal(const Vector3 &v) {
 }
 size_t Mesh::getNormalCount() const {
 	return normals.size();
+}
+
+size_t Mesh::addTangent(const Vector3 &v) {
+    tangents.push_back(v);
+    //printf("vt (%lf,%lf,%lf)\n", v.x, v.y, v.z); //+++++
+    return tangents.size() - 1;
+}
+size_t Mesh::getTangentCount() const {
+    return tangents.size();
 }
 
 size_t Mesh::newAttributeContainer() {
@@ -143,6 +159,7 @@ void Mesh::postProcess() {
 		f.normal = Vector3::normalized(vn);
 		f.area = vn.length();
 		surfArea += f.area;
+        f.areaBorder = surfArea;
 	}
 }
 
@@ -303,6 +320,44 @@ bool Mesh::isIntersect(const Ray &ray, Intersection *intersect) const {
     intersect->materialId = hitface.matid;
     
     return true;
+}
+
+
+Geometry::SamplePoint Mesh::getSamplePoint(Random *rng) const {
+    Geometry::SamplePoint ret;
+    
+    // uniform triangle sample
+    R1hFPType su0 = std::sqrt(rng->nextf());
+    R1hFPType u0 = 1.0 - su0;
+    R1hFPType u1 = su0 * rng->nextf();
+    R1hFPType u2 = 1.0 - u0 - u1;
+    
+    // choose face
+    R1hFPType fa = rng->nextf() * surfArea;
+    size_t li = 0;
+    size_t ri = faces.size() - 1;
+    size_t lmt = ri;
+    while(ri - li > 1) {
+        size_t i = (li + ri) / 2;
+        if(fa > faces[i].areaBorder) {
+            li = i;
+        } else {
+            ri = i;
+        }
+        if(--lmt <= 0) {
+            std::cout << "choose face infinit loop?" << std::endl;
+            break;
+        }
+    }
+    const Face &fc = (fa < faces[li].areaBorder)? faces[li] : faces[ri];
+    
+    // point on face
+    ret.position = vertices[fc.v0] * u0 + vertices[fc.v1] * u1 + vertices[fc.v2] * u2;
+    ret.normal = normals[fc.n0] * u0 + normals[fc.n1] * u1 + normals[fc.n2] * u2;
+    ret.normal.normalize();
+    ret.pdf = 1.0 / surfArea;
+    
+    return ret;
 }
 
 void Mesh::prepareRendering() {

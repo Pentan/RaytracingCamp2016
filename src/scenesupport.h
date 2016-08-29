@@ -2,11 +2,11 @@
 #ifndef R1H_SCENESUPPORT_H
 #define R1H_SCENESUPPORT_H
 
-#include "material.h"
-#include "bsdf.h"
+#include "materials/material_include.h"
+#include "bsdfs/bsdf_include.h"
 #include "wavefrontobj.h"
 #include "scene.h"
-#include "mesh.h"
+#include "geometries/geometry_include.h"
 
 /// support class
 namespace r1h {

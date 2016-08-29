@@ -21,16 +21,19 @@ class Material : public Asset {
 public:
     Material() {}
     virtual ~Material() {}
-	
+    
     virtual Color getEmittance(const FinalIntersection &isect) const = 0;
     virtual R1hFPType getTerminationProbability(const FinalIntersection &isect) const = 0;
     virtual void makeNextSampleRays(Renderer::Context* cntx, const FinalIntersection &isect, const int depth) const = 0;
+    virtual Color evalShadowRay(Renderer::Context* cntx, const Ray &shadowray, const FinalIntersection &isect) const = 0;
     
     virtual Vector3 getShadingNormal(const FinalIntersection &isect) const;
     
     virtual void setTexture(int i, TextureRef texref);
     virtual void setColorTexture(int i, const Color& col);
     virtual Texture* getTexture(int i) const;
+    
+    virtual bool isLight() const;
     
 protected:
     std::vector<TextureRef> textures;

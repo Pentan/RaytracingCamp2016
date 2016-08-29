@@ -27,7 +27,7 @@ void NoiseTexture::setSeed(const int seed) {
     NoiseSortComparator cmp;
     Random rnd(seed);
     for(int i = 0; i < 256; i++) {
-        cmp.num[i] = rnd.next();
+        cmp.num[i] = rnd.nexti();
         noise[i] = i;
     }
     std::sort(noise, noise + 256, cmp);

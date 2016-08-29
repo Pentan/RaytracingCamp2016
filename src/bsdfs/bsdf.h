@@ -28,6 +28,7 @@ public:
     };
     
     enum BSDFType {
+        kSensor     = 0,
         kDiffuse    = 1,
         kSpecular   = 2,
         kGlossy     = 4,
@@ -48,6 +49,9 @@ public:
     virtual int getType() const = 0;
     
     virtual Sample getSample(Renderer::Context *cntx, const FinalIntersection &isect) = 0;
+    // vector direction
+    // insident ->|
+    // outgoing <-|
     virtual R1hFPType evaluate(const Sample& insident, const Sample& outgoing) = 0;
     virtual R1hFPType probabilityForSample(const Sample& insident, const Sample& smpl) = 0;
 };

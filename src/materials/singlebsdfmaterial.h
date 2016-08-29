@@ -41,7 +41,8 @@ public:
     virtual Color getEmittance(const FinalIntersection &isect) const;
     virtual R1hFPType getTerminationProbability(const FinalIntersection &isect) const;
 	virtual void makeNextSampleRays(Renderer::Context* cntx, const FinalIntersection &isect, const int depth) const;
-	
+	virtual Color evalShadowRay(Renderer::Context* cntx, const Ray &shadowray, const FinalIntersection &isect) const;
+    
     virtual Vector3 getShadingNormal(const FinalIntersection &isect) const;
     
 private:

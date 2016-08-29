@@ -3,8 +3,6 @@
 
 using namespace r1h;
 
-#define kSmallOffset    kEPS
-
 Vector3 BSDF::Sample::smallOffsetedPosition() const {
     return position + normal * kSmallOffset;
 }

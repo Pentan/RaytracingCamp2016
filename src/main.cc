@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <iostream>
 #include <cstdio>
 #include <string>
@@ -15,7 +19,8 @@
 #include "eduptscene.h"
 //
 
-#ifdef WIN32
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
 static double gettimeofday_sec() {
 	return timeGetTime() / 1000.0;
@@ -30,12 +35,13 @@ static double gettimeofday_sec() {
 #endif
 
 ///
-#define kProgressOutIntervalSec	30.0
+//#define kProgressOutIntervalSec	30.0
+static const char kProgressChars[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ(){}[]<>!#$%&=^~@+*?/_";
 
 ///
 int main(int argc, char *argv[]) {
 
-	std::cout << "twi" << std::endl;
+	std::cout << "RrT" << std::endl;
 
     using namespace r1h;
 
@@ -50,33 +56,37 @@ int main(int argc, char *argv[]) {
 	
 	if(argc > 1){
 		XMLSceneLoader loader;
-#if 0
-		//std::string xmlfile("scenes/edupt_cornelbox.xml");
-		//std::string xmlfile("scenes/mesh_cube.xml");
-		//std::string xmlfile("scenes/textest.xml");
-		//std::string xmlfile("scenes/bsdftest.xml");
-		//std::string xmlfile("scenes/mesh_ref.xml");
-		//std::string xmlfile("scenes/mesh_cat.xml");
-		std::string xmlfile("scenes/scene.xml");
-#else
         std::string xmlfile(argv[1]);
-#endif
 		loaded = loader.load(xmlfile, scene, render);
 		//loaded = true;
 		//return 0;
     } else {
+#if 1
+        //std::string xmlfile("scenes/edupt_cornelbox.xml");
+        //std::string xmlfile("scenes/edupt_cornelbox2.xml");
+        //std::string xmlfile("scenes/bsdftest.xml");
+        //std::string xmlfile("scenes/materialtest.xml");
+        //std::string xmlfile("scenes/materialtest2.xml");
+        //std::string xmlfile("scenes/timetest.xml");
+        std::string xmlfile("scenes/scene2016.xml");
+        
+        XMLSceneLoader loader;
+        loaded = loader.load(xmlfile, scene, render);
+#else
         Renderer::Config conf = render->getConfig();
         conf.width = 256;
         conf.height = 256;
-        conf.samples = 64;
+        conf.samples = 32;
         render->setConfig(conf);
         loaded = EduptScene::load(scene, double(conf.width) / conf.height);
         //loaded = true;
+#endif
     }
 
     printf("scene loaded [%.4f sec]\n", gettimeofday_sec() - startTime);
 
 	if(loaded) {
+        const Renderer::Config &conf = render->getConfig();
 
 		// set tone mapper
 		ToneMapper *mapper = new ToneMapper();
@@ -89,16 +99,16 @@ int main(int argc, char *argv[]) {
 		// wait to finish
 		int outcount = 0;
 		double prevouttime = gettimeofday_sec();
+        size_t progcharlen = strlen(kProgressChars);
         
         int numcntx = (int)render->getRecderContextCount();
-        
 		do {
 			double progress = render->getRenderProgress();
 			
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 			
 			double curtime = gettimeofday_sec();
-			if(curtime - prevouttime > kProgressOutIntervalSec) {
+			if(conf.progressOutInterval > 0.0 && curtime - prevouttime > conf.progressOutInterval) {
 				// progress output
 				char buf[16];
 				sprintf(buf, "%03d.bmp", outcount);
@@ -106,16 +116,33 @@ int main(int argc, char *argv[]) {
 				mapper->exportBMP(render->getFrameBuffer(), buf);
                 printf("progress image %s saved\n", buf);
 				outcount++;
-				prevouttime += kProgressOutIntervalSec;
+				prevouttime += conf.progressOutInterval;
 			}
 			
+            // print progress log
 			printf("%.2lf%%:", progress);
             for(int i = 0; i < numcntx; i++) {
                 const Renderer::Context *cntx = render->getRenderContext(i);
-                printf("[%d:%.1lf]", i, cntx->tileProgress * 100.0);
+                //printf("[%.1lf]", cntx->tileProgress * 100.0);
+                size_t progindex = size_t(cntx->tileProgress * progcharlen);
+                if(progindex >= progcharlen) {
+                    progindex = progcharlen - 1;
+                }
+                printf("%c", kProgressChars[progindex]);
             }
             printf("    \r");
             fflush(stdout);
+            
+            // timelimit mode
+            if(conf.renderMode == Renderer::kTimeLimit) {
+                double pasttime = curtime - startTime;
+                if(pasttime > conf.maxLimitTime) {
+                    for(int i = 0; i < numcntx; i++) {
+                        Renderer::Context *cntx = render->getRenderContext(i);
+                        cntx->killRequest = true;
+                    }
+                }
+            }
             
 		} while( !render->isFinished() );
 

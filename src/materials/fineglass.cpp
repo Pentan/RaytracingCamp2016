@@ -93,7 +93,7 @@ void FineGlassMaterial::makeNextSampleRays(Renderer::Context* cntx, const FinalI
     
     // full reflection case
     if((tr_smpl.flag & FullRefractionBSDF::kReflected) != 0) {
-        cntx->emitRay(tr_smpl.getRay(), reflectance);
+        cntx->emitRay(tr_smpl.getRay(), reflectance, BSDF::kSpecular);
         return;
     }
     
@@ -116,21 +116,25 @@ void FineGlassMaterial::makeNextSampleRays(Renderer::Context* cntx, const FinalI
     const R1hFPType Re = F0 + (1.0 - F0) * pow(1.0 - std::abs(rdotn), 5.0);
     const R1hFPType Tr = 1.0 - Re;
     
-    if(depth > 2) {
+    if(depth > 1) {
         // trace one
         const R1hFPType prob = 0.25 + 0.5 * Re;
         if(cntx->random.next01() < prob) {
             // reflect
-            cntx->emitRay(ref_smpl.getRay(), reflectance * (Re / prob));
+            cntx->emitRay(ref_smpl.getRay(), reflectance * (Re / prob), BSDF::kSpecular);
         } else {
             // transmit
-            cntx->emitRay(tr_smpl.getRay(), transmittance * (Tr / ( 1.0 - prob)));
+            cntx->emitRay(tr_smpl.getRay(), transmittance * (Tr / ( 1.0 - prob)), BSDF::kRefraction);
         }
     } else {
         // trace both
-        cntx->emitRay(ref_smpl.getRay(), reflectance * Re);
-        cntx->emitRay(tr_smpl.getRay(), transmittance * Tr);
+        cntx->emitRay(ref_smpl.getRay(), reflectance * Re, BSDF::kSpecular);
+        cntx->emitRay(tr_smpl.getRay(), transmittance * Tr, BSDF::kRefraction);
     }
+}
+
+Color FineGlassMaterial::evalShadowRay(Renderer::Context* cntx, const Ray &shadowray, const FinalIntersection &isect) const {
+    return Color(0.0);
 }
 
 Vector3 FineGlassMaterial::getShadingNormal(const FinalIntersection &isect) const {

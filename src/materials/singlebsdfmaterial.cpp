@@ -13,27 +13,6 @@ SingleBSDFMaterial::SingleBSDFMaterial(BSDFRef bsdf):
 SingleBSDFMaterial::~SingleBSDFMaterial() {
 }
 
-/*
-void SingleBSDFMaterial::setReflectanceColor(const Color col) {
-	reflectanceTex = TextureRef(new ConstantColorTexture(col));
-}
-void SingleBSDFMaterial::setReflectanceTexture(TextureRef tex) {
-	reflectanceTex = tex;
-}
-Texture* SingleBSDFMaterial::getReflectanceTexture() const {
-	return reflectanceTex.get();
-}
-
-void SingleBSDFMaterial::setEmittanceColor(const Color col) {
-	emittanceTex = TextureRef(new ConstantColorTexture(col));
-}
-void SingleBSDFMaterial::setEmittanceTexture(TextureRef tex) {
-	emittanceTex = tex;
-}
-Texture* SingleBSDFMaterial::getEmittanceTexture() const {
-	return emittanceTex.get();
-}
-*/
 void SingleBSDFMaterial::setBSDF(BSDFRef newbsdf) {
 	bsdf = newbsdf;
 }
@@ -58,7 +37,31 @@ void SingleBSDFMaterial::makeNextSampleRays(Renderer::Context* cntx, const Final
     Color reflectance = tex->sample(&isect);
     
     BSDF::Sample smpl = bsdf->getSample(cntx, isect);
-    cntx->emitRay(smpl.getRay(), reflectance);
+    cntx->emitRay(smpl.getRay(), reflectance, bsdf->getType());
+}
+
+Color SingleBSDFMaterial::evalShadowRay(Renderer::Context* cntx, const Ray &shadowray, const FinalIntersection &isect) const {
+    if((bsdf->getType() & (BSDF::kSpecular | BSDF::kRefraction)) != 0) {
+        return Color(0.0);
+    }
+    
+    const Ray &inray = cntx->getCurrentInsidentRay();
+    BSDF::Sample insmpl;
+    insmpl.position = isect.position;
+    insmpl.normal = isect.shadingNormal;
+    insmpl.direction = inray.direction;
+    
+    BSDF::Sample outsmpl;
+    outsmpl.position = isect.position;
+    outsmpl.normal = isect.shadingNormal;
+    outsmpl.direction = shadowray.direction;
+    
+    Color f = bsdf->evaluate(insmpl, outsmpl);
+    Texture *tex = getTexture(kReflectance);
+    Color reflectance = tex->sample(&isect);
+    //R1hFPType p = bsdf->probabilityForSample(insmpl, outsmpl);
+    
+    return Color::mul(f, reflectance);// / p;
 }
 
 Vector3 SingleBSDFMaterial::getShadingNormal(const FinalIntersection &isect) const {

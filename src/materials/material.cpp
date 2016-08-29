@@ -54,3 +54,7 @@ void Material::setColorTexture(int i, const Color& col) {
 Texture* Material::getTexture(int i) const {
     return textures[i].get();
 }
+
+bool Material::isLight() const {
+    return false;
+}
