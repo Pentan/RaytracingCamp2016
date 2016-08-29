@@ -39,7 +39,9 @@
 	
 	<sky type="sphere">
 		<color type="rgb" r="0.5" g="0.5" b="0.5"/>
-		<!-- <texture type="image" src="items/Tropical_Beach_3k.hdr" /> -->
+		<!-- camp version HDRI
+		<texture type="image" src="items/Tropical_Beach_3k.hdr" />
+		-->
 	</sky>
 	
 	<library></library>	

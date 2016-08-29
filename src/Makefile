@@ -14,8 +14,11 @@ endif
 EXT_DIR = ext
 INCLUDES = -I$(EXT_DIR) -I.
 
-CFLAGS = -Wall $(EXTRAFLAGS) $(INCLUDES)
-CXXFLAGS = -std=c++11 -stdlib=libc++ -Wall $(EXTRAFLAGS) $(INCLUDES)
+WFLAG = -Wall
+WFLAG = 
+
+CFLAGS = $(WFLAG) $(EXTRAFLAGS) $(INCLUDES)
+CXXFLAGS = -std=c++11 -stdlib=libc++ $(WFLAG) $(EXTRAFLAGS) $(INCLUDES)
 LDFLAGS = -lc++ $(EXTRAFLAGS)
 
 OBJS = \
@@ -36,31 +39,38 @@ OBJS = \
     wavefrontobj.o \
     xmlscene.o \
     xmlobjloader.o \
+    bsdfs/bsdf.o \
     bsdfs/lambert.o \
+    bsdfs/burley.o \
+    bsdfs/ggx.o \
     bsdfs/fullrefraction.o \
     bsdfs/fullreflection.o \
-    bsdfs/paint.o \
     bsdfs/translucent.o \
+    materials/material.o \
+    materials/fineglass.o \
+    materials/lightmaterial.o \
     materials/singlebsdfmaterial.o \
-    materials/simplesky.o \
+    materials/skymaterial.o \
+    materials/sppmaterial.o \
     geometries/aabbgeometry.o \
     geometries/sphere.o \
     geometries/mesh.o \
-    texture/texture.o \
-    texture/imagetexture.o \
-    texture/noisetexture.o
+    textures/texture.o \
+    textures/imagetexture.o \
+    textures/noisetextures.o
 
 EXT_OBJS = \
     $(EXT_DIR)/tinyxml/tinyxml2.o
 
 #    $(EXT_DIR)/tinyexr/tinyexr.o \
 
-MAINEXE = r5m
-MAINTARGET = r5m
+MAINEXE = RrT
+MAINTARGET = RrT
 
 # main
 $(MAINTARGET) : $(OBJS) $(EXT_OBJS)
 	$(CC) -o "$(MAINEXE)" $(OBJS) $(EXT_OBJS) $(LDFLAGS)
+	cp "$(MAINEXE)" ..
 
 clean :
 	rm -f $(OBJS) $(EXT_OBJS) "$(MAINEXE)"
